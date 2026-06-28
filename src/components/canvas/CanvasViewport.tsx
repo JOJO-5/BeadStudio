@@ -1,5 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import type { WheelEvent, MouseEvent } from 'react'
+import { useProjectStore } from '@/store/projectStore'
+import { pixelateImage } from '@/engine/pixelate'
 
 interface CanvasViewportProps {
   zoom: number
@@ -12,7 +14,10 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
 
-  // Draw checkerboard background and grid
+  const originalImage = useProjectStore((s) => s.originalImage)
+  const beadSize = useProjectStore((s) => s.beadSize)
+
+  // Draw canvas content
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -30,7 +35,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
     ctx.fillStyle = '#F1F5F9'
     ctx.fillRect(0, 0, rect.width, rect.height)
 
-    // Draw checkerboard pattern (transparency)
+    // Draw checkerboard background
     const checkSize = 8
     ctx.fillStyle = '#E2E8F0'
     for (let y = 0; y < rect.height; y += checkSize * 2) {
@@ -40,49 +45,71 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
       }
     }
 
-    // Draw grid
-    const gridSize = 20 * zoom
-    ctx.strokeStyle = '#E2E8F0'
-    ctx.lineWidth = 1
+    // Draw image if available
+    if (originalImage && originalImage.width > 0 && originalImage.height > 0) {
+      const pixelSize = Math.max(1, beadSize)
+      const pixelated = pixelateImage(originalImage, { pixelSize })
 
-    // Vertical lines
-    for (let x = 0; x < rect.width; x += gridSize) {
-      ctx.beginPath()
-      ctx.moveTo(x, 0)
-      ctx.lineTo(x, rect.height)
-      ctx.stroke()
+      // Create temp canvas for image
+      const imgCanvas = document.createElement('canvas')
+      imgCanvas.width = pixelated.width
+      imgCanvas.height = pixelated.height
+      const imgCtx = imgCanvas.getContext('2d')
+      if (imgCtx) {
+        imgCtx.putImageData(pixelated, 0, 0)
+
+        // Calculate position to center the image
+        const imgWidth = pixelated.width * pixelSize * zoom
+        const imgHeight = pixelated.height * pixelSize * zoom
+        const centerX = (rect.width - imgWidth) / 2 + pan.x
+        const centerY = (rect.height - imgHeight) / 2 + pan.y
+
+        ctx.imageSmoothingEnabled = false
+        ctx.drawImage(imgCanvas, centerX, centerY, imgWidth, imgHeight)
+
+        // Draw bead grid overlay
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'
+        ctx.lineWidth = 1
+
+        // Vertical lines
+        for (let x = 0; x <= pixelated.width; x++) {
+          ctx.beginPath()
+          ctx.moveTo(centerX + x * pixelSize * zoom, centerY)
+          ctx.lineTo(centerX + x * pixelSize * zoom, centerY + imgHeight)
+          ctx.stroke()
+        }
+
+        // Horizontal lines
+        for (let y = 0; y <= pixelated.height; y++) {
+          ctx.beginPath()
+          ctx.moveTo(centerX, centerY + y * pixelSize * zoom)
+          ctx.lineTo(centerX + imgWidth, centerY + y * pixelSize * zoom)
+          ctx.stroke()
+        }
+      }
+    } else {
+      // Draw placeholder
+      const centerX = rect.width / 2 + pan.x
+      const centerY = rect.height / 2 + pan.y
+      const placeholderSize = 100 * zoom
+
+      ctx.strokeStyle = '#CBD5E1'
+      ctx.lineWidth = 2
+      ctx.setLineDash([5, 5])
+      ctx.strokeRect(
+        centerX - placeholderSize / 2,
+        centerY - placeholderSize / 2,
+        placeholderSize,
+        placeholderSize
+      )
+      ctx.setLineDash([])
+
+      ctx.fillStyle = '#94A3B8'
+      ctx.font = '12px Inter, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText('上传图片开始设计', centerX, centerY)
     }
-
-    // Horizontal lines
-    for (let y = 0; y < rect.height; y += gridSize) {
-      ctx.beginPath()
-      ctx.moveTo(0, y)
-      ctx.lineTo(rect.width, y)
-      ctx.stroke()
-    }
-
-    // Draw center cross (placeholder for where image would go)
-    const centerX = rect.width / 2 + pan.x
-    const centerY = rect.height / 2 + pan.y
-    const placeholderSize = 100 * zoom
-
-    ctx.strokeStyle = '#CBD5E1'
-    ctx.lineWidth = 2
-    ctx.setLineDash([5, 5])
-    ctx.strokeRect(
-      centerX - placeholderSize / 2,
-      centerY - placeholderSize / 2,
-      placeholderSize,
-      placeholderSize
-    )
-    ctx.setLineDash([])
-
-    // Center indicator
-    ctx.fillStyle = '#94A3B8'
-    ctx.font = '12px Inter, sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText('上传图片开始设计', centerX, centerY)
-  }, [zoom, pan])
+  }, [zoom, pan, originalImage, beadSize])
 
   // Handle zoom
   const handleWheel = (e: WheelEvent) => {
