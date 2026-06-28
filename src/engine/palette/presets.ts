@@ -1,22 +1,20 @@
-import type { Palette } from './perler.classic'
+import type { Palette, PaletteColor } from './perler.classic'
 import { perlerClassic } from './perler.classic'
 import { artkalMini } from './artkal'
 import { hamaPalette } from './hama'
 import { mardPalette } from './mard'
-import { manmanPalette, xiaowuPalette, panpanPalette, huangdoudouPalette, dongmumuPalette } from './domestic'
+import { nabbiPalette } from './nabbi'
+import { pysslaPalette } from './pyssla'
 
-export type { Palette, PaletteColor } from './perler.classic'
+export type { Palette, PaletteColor }
 
 export const presetPalettes: Palette[] = [
   perlerClassic,
   artkalMini,
   hamaPalette,
   mardPalette,
-  manmanPalette,
-  xiaowuPalette,
-  panpanPalette,
-  huangdoudouPalette,
-  dongmumuPalette,
+  nabbiPalette,
+  pysslaPalette,
 ]
 
 export function getPaletteById(id: string): Palette | undefined {
