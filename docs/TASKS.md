@@ -48,8 +48,8 @@
 - [x] **Task-029**: 实现 ColorMatcher（颜色量化 / LAB 转换 / ΔE2000 计算，集成 image-q）
 - [x] **Task-030**: 实现抖动算法（Floyd-Steinberg / Atkinson / Sierra，可切换）
 - [x] **Task-031**: 实现调色板映射预览（显示原图 → 映射后效果对比）
-- [ ] **Task-032**: 实现颜色替换功能（单个颜色或整体调色板替换）
-- [ ] **Task-033**: 实现 Statistics 模块（每种颜色的 bead 数量 / 百分比 / 总数）
+- [x] **Task-032**: 实现颜色替换功能（单个颜色或整体调色板替换）
+- [x] **Task-033**: 实现 Statistics 模块（每种颜色的 bead 数量 / 百分比 / 总数）
 
 ---
 
