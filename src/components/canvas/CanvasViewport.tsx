@@ -2,6 +2,8 @@ import { useRef, useEffect, useState } from 'react'
 import type { WheelEvent, MouseEvent } from 'react'
 import { useProjectStore } from '@/store/projectStore'
 import { pixelateImage } from '@/engine/pixelate'
+import { quantizeToPalette } from '@/engine/colorMatch'
+import { presetPalettes } from '@/engine/palette'
 
 interface CanvasViewportProps {
   zoom: number
@@ -16,6 +18,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
 
   const originalImage = useProjectStore((s) => s.originalImage)
   const beadSize = useProjectStore((s) => s.beadSize)
+  const paletteId = useProjectStore((s) => s.paletteId)
 
   // Draw canvas content
   useEffect(() => {
@@ -47,20 +50,24 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
 
     // Draw image if available
     if (originalImage && originalImage.width > 0 && originalImage.height > 0) {
+      const palette = presetPalettes.find((p) => p.id === paletteId) || presetPalettes[0]
       const pixelSize = Math.max(1, beadSize)
+
+      // First pixelate, then quantize to palette
       const pixelated = pixelateImage(originalImage, { pixelSize })
+      const quantized = quantizeToPalette(pixelated, palette)
 
       // Create temp canvas for image
       const imgCanvas = document.createElement('canvas')
-      imgCanvas.width = pixelated.width
-      imgCanvas.height = pixelated.height
+      imgCanvas.width = quantized.imageData.width
+      imgCanvas.height = quantized.imageData.height
       const imgCtx = imgCanvas.getContext('2d')
       if (imgCtx) {
-        imgCtx.putImageData(pixelated, 0, 0)
+        imgCtx.putImageData(quantized.imageData, 0, 0)
 
         // Calculate position to center the image
-        const imgWidth = pixelated.width * pixelSize * zoom
-        const imgHeight = pixelated.height * pixelSize * zoom
+        const imgWidth = quantized.imageData.width * pixelSize * zoom
+        const imgHeight = quantized.imageData.height * pixelSize * zoom
         const centerX = (rect.width - imgWidth) / 2 + pan.x
         const centerY = (rect.height - imgHeight) / 2 + pan.y
 
@@ -72,7 +79,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
         ctx.lineWidth = 1
 
         // Vertical lines
-        for (let x = 0; x <= pixelated.width; x++) {
+        for (let x = 0; x <= quantized.imageData.width; x++) {
           ctx.beginPath()
           ctx.moveTo(centerX + x * pixelSize * zoom, centerY)
           ctx.lineTo(centerX + x * pixelSize * zoom, centerY + imgHeight)
@@ -80,7 +87,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
         }
 
         // Horizontal lines
-        for (let y = 0; y <= pixelated.height; y++) {
+        for (let y = 0; y <= quantized.imageData.height; y++) {
           ctx.beginPath()
           ctx.moveTo(centerX, centerY + y * pixelSize * zoom)
           ctx.lineTo(centerX + imgWidth, centerY + y * pixelSize * zoom)
@@ -109,7 +116,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
       ctx.textAlign = 'center'
       ctx.fillText('上传图片开始设计', centerX, centerY)
     }
-  }, [zoom, pan, originalImage, beadSize])
+  }, [zoom, pan, originalImage, beadSize, paletteId])
 
   // Handle zoom
   const handleWheel = (e: WheelEvent) => {
