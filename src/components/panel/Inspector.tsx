@@ -1,61 +1,74 @@
+import { useMemo } from 'react'
 import { BarChart3, Info } from 'lucide-react'
+import { useProjectStore } from '@/store/projectStore'
+import { presetPalettes } from '@/engine/palette'
+import { pixelateImage } from '@/engine/pixelate'
+import { quantizeToPalette } from '@/engine/colorMatch'
+import { countColors } from '@/engine/statistics'
 
 interface InspectorProps {
-  beadCount: number
-  colorCount: number
-  boardCount: number
   projectName: string
-  dimensions: { width: number; height: number }
 }
 
-export function Inspector({
-  beadCount,
-  colorCount,
-  boardCount,
-  projectName,
-  dimensions,
-}: InspectorProps) {
+export function Inspector({ projectName }: InspectorProps) {
+  const originalImage = useProjectStore((s) => s.originalImage)
+  const beadSize = useProjectStore((s) => s.beadSize)
+  const paletteId = useProjectStore((s) => s.paletteId)
+  const targetWidth = useProjectStore((s) => s.targetWidth)
+  const targetHeight = useProjectStore((s) => s.targetHeight)
+
+  const palette = presetPalettes.find((p) => p.id === paletteId) || presetPalettes[0]
+
+  const statistics = useMemo(() => {
+    if (!originalImage || originalImage.width === 0) {
+      return null
+    }
+
+    const pixelated = pixelateImage(originalImage, { pixelSize: beadSize })
+    const quantized = quantizeToPalette(pixelated, palette)
+    return countColors(quantized.imageData, palette)
+  }, [originalImage, beadSize, palette])
+
+  const beadCount = statistics?.totalPixels || 0
+  const colorCount = statistics?.colorCount || 0
+
   return (
     <div className="p-4 space-y-6">
       {/* Statistics */}
       <InspectorSection title="统计" icon={<BarChart3 className="w-4 h-4" />}>
         <div className="space-y-3">
-          <StatItem label="Bead 总数" value={beadCount.toLocaleString()} />
-          <StatItem label="颜色数量" value={colorCount.toString()} />
-          <StatItem label="拼板数量" value={boardCount.toString()} />
+          <StatItem label="Bead 总数" value={beadCount > 0 ? beadCount.toLocaleString() : '—'} />
+          <StatItem label="颜色数量" value={colorCount > 0 ? colorCount.toString() : '—'} />
         </div>
 
-        {/* Placeholder color bars */}
-        <div className="mt-4 space-y-2">
-          <p className="text-xs text-[var(--color-text-muted)]">颜色分布</p>
-          {[
-            { color: '#EF4444', name: '红色', count: 245 },
-            { color: '#3B82F6', name: '蓝色', count: 189 },
-            { color: '#22C55E', name: '绿色', count: 156 },
-            { color: '#EAB308', name: '黄色', count: 98 },
-          ].map((item) => (
-            <div key={item.name} className="flex items-center gap-2">
-              <div
-                className="w-3 h-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="text-xs text-[var(--color-text-secondary)] flex-1 truncate">
-                {item.name}
-              </span>
-              <span className="text-xs text-[var(--color-text-muted)]">
-                {item.count}
-              </span>
-            </div>
-          ))}
-        </div>
+        {statistics && statistics.colors.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <p className="text-xs text-[var(--color-text-muted)]">颜色分布</p>
+            {statistics.colors.slice(0, 8).map((stat) => (
+              <div key={stat.color.code} className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full flex-shrink-0 border border-[var(--color-border)]"
+                  style={{ backgroundColor: stat.color.hex }}
+                />
+                <span className="text-xs text-[var(--color-text-secondary)] flex-1 truncate">
+                  {stat.color.nameZh}
+                </span>
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {stat.count} ({stat.percentage.toFixed(1)}%)
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </InspectorSection>
 
       {/* Project Info */}
       <InspectorSection title="项目信息" icon={<Info className="w-4 h-4" />}>
         <div className="space-y-3">
           <InfoItem label="名称" value={projectName} />
-          <InfoItem label="尺寸" value={`${dimensions.width} × ${dimensions.height}`} />
-          <InfoItem label="缩放" value="100%" />
+          <InfoItem label="调色板" value={palette.nameZh} />
+          <InfoItem label="尺寸" value={targetWidth > 0 && targetHeight > 0 ? `${targetWidth} × ${targetHeight}` : '—'} />
+          <InfoItem label="Bead 尺寸" value={`${beadSize}px`} />
         </div>
       </InspectorSection>
     </div>

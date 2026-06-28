@@ -46,13 +46,7 @@ function App() {
       sidebar={<Sidebar />}
       canvas={<CanvasViewport zoom={zoom} onZoomChange={setZoom} />}
       inspector={
-        <Inspector
-          beadCount={0}
-          colorCount={0}
-          boardCount={0}
-          projectName={projectName}
-          dimensions={{ width: 0, height: 0 }}
-        />
+        <Inspector projectName={projectName} />
       }
       statusBar={
         <StatusBar
