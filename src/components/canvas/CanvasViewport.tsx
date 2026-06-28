@@ -6,6 +6,7 @@ import { quantizeWithDithering } from '@/engine/colorMatch'
 import { removeWhiteBackground } from '@/engine/convert'
 import { quickTouchup as applyTouchup } from '@/engine/grid'
 import { presetPalettes } from '@/engine/palette'
+import { renderBeads, renderBeadGridLines } from '@/engine/render'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 interface CanvasViewportProps {
@@ -47,7 +48,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
     let pixelated = pixelateImage(processed, { pixelSize })
 
     // Apply quick touchup if enabled
-    if (applyTouchup) {
+    if (quickTouchup) {
       pixelated = applyTouchup(pixelated, palette.colors)
     }
 
@@ -74,12 +75,12 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
     canvas.height = rect.height * dpr
     ctx.scale(dpr, dpr)
 
-    // Clear
+    // Clear with background
     ctx.fillStyle = '#F1F5F9'
     ctx.fillRect(0, 0, rect.width, rect.height)
 
-    // Draw checkerboard background
-    const checkSize = 8
+    // Draw subtle checkerboard background
+    const checkSize = 16
     ctx.fillStyle = '#E2E8F0'
     for (let y = 0; y < rect.height; y += checkSize * 2) {
       for (let x = 0; x < rect.width; x += checkSize * 2) {
@@ -88,49 +89,36 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
       }
     }
 
-    // Draw image if available
+    // Draw bead pattern if available
     if (quantizedData && quantizedData.width > 0) {
-      const pixelSize = Math.max(1, beadSize)
+      const pixelSize = Math.max(4, beadSize) // Minimum 4px for visibility
 
-      // Create temp canvas for image
-      const imgCanvas = document.createElement('canvas')
-      imgCanvas.width = quantizedData.width
-      imgCanvas.height = quantizedData.height
-      const imgCtx = imgCanvas.getContext('2d')
-      if (imgCtx) {
-        imgCtx.putImageData(quantizedData, 0, 0)
+      // Calculate position to center the image
+      const imgWidth = quantizedData.width * pixelSize
+      const imgHeight = quantizedData.height * pixelSize
+      const centerX = (rect.width - imgWidth * debouncedZoom) / 2 + debouncedPan.x
+      const centerY = (rect.height - imgHeight * debouncedZoom) / 2 + debouncedPan.y
 
-        // Calculate position to center the image (use debounced values)
-        const imgWidth = quantizedData.width * pixelSize * debouncedZoom
-        const imgHeight = quantizedData.height * pixelSize * debouncedZoom
-        const centerX = (rect.width - imgWidth) / 2 + debouncedPan.x
-        const centerY = (rect.height - imgHeight) / 2 + debouncedPan.y
+      // Save context for scaling
+      ctx.save()
 
-        ctx.imageSmoothingEnabled = false
-        ctx.drawImage(imgCanvas, centerX, centerY, imgWidth, imgHeight)
+      // Apply zoom transform
+      ctx.translate(centerX, centerY)
+      ctx.scale(debouncedZoom, debouncedZoom)
 
-        // Only draw grid when zoomed in enough
-        if (debouncedZoom >= 0.8) {
-          ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'
-          ctx.lineWidth = 1
+      // Render beads with 3D effect
+      renderBeads(ctx, quantizedData, palette.colors, {
+        beadSize: pixelSize,
+        gap: 0.08,
+        highlightIntensity: 0.35,
+      }, 0, 0)
 
-          // Vertical lines
-          for (let x = 0; x <= quantizedData.width; x++) {
-            ctx.beginPath()
-            ctx.moveTo(centerX + x * pixelSize * debouncedZoom, centerY)
-            ctx.lineTo(centerX + x * pixelSize * debouncedZoom, centerY + imgHeight)
-            ctx.stroke()
-          }
-
-          // Horizontal lines
-          for (let y = 0; y <= quantizedData.height; y++) {
-            ctx.beginPath()
-            ctx.moveTo(centerX, centerY + y * pixelSize * debouncedZoom)
-            ctx.lineTo(centerX + imgWidth, centerY + y * pixelSize * debouncedZoom)
-            ctx.stroke()
-          }
-        }
+      // Draw grid lines
+      if (debouncedZoom >= 0.6) {
+        renderBeadGridLines(ctx, quantizedData, pixelSize, 0, 0, debouncedZoom)
       }
+
+      ctx.restore()
     } else {
       // Draw placeholder
       const centerX = rect.width / 2 + pan.x
@@ -149,11 +137,11 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
       ctx.setLineDash([])
 
       ctx.fillStyle = '#94A3B8'
-      ctx.font = '12px Inter, sans-serif'
+      ctx.font = '14px Inter, -apple-system, sans-serif'
       ctx.textAlign = 'center'
       ctx.fillText('上传图片开始设计', centerX, centerY)
     }
-  }, [debouncedZoom, debouncedPan, quantizedData, beadSize, zoom, pan])
+  }, [debouncedZoom, debouncedPan, quantizedData, beadSize, zoom, pan, palette])
 
   // Handle zoom
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -186,7 +174,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
 
   return (
     <div
-      className="w-full h-full overflow-hidden cursor-crosshair"
+      className="w-full h-full overflow-hidden"
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
