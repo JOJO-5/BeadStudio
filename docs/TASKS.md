@@ -28,7 +28,7 @@
 - [ ] **Task-019**: 实现全局快捷键支持（Ctrl+Z / Ctrl+Shift+Z / Ctrl+S / Delete）
 - [x] **Task-020**: 配置 Zustand Store（ProjectStore / CanvasStore / SettingsStore / HistoryStore）
 - [x] **Task-021**: 实现 Undo/Redo 历史记录功能（基于 HistoryStore）
-- [ ] **Task-022**: 实现本地项目持久化（localStorage 保存/加载）
+- [x] **Task-022**: 实现本地项目持久化（localStorage 保存/加载）
 
 ---
 
