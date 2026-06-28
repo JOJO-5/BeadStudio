@@ -3,7 +3,7 @@ import { BarChart3, Info } from 'lucide-react'
 import { useProjectStore } from '@/store/projectStore'
 import { presetPalettes } from '@/engine/palette'
 import { pixelateImage } from '@/engine/pixelate'
-import { quantizeToPalette } from '@/engine/colorMatch'
+import { quantizeWithDithering } from '@/engine/colorMatch'
 import { countColors } from '@/engine/statistics'
 
 interface InspectorProps {
@@ -25,7 +25,7 @@ export function Inspector({ projectName }: InspectorProps) {
     }
 
     const pixelated = pixelateImage(originalImage, { pixelSize: beadSize })
-    const quantized = quantizeToPalette(pixelated, palette)
+    const quantized = quantizeWithDithering(pixelated, palette)
     return countColors(quantized.imageData, palette)
   }, [originalImage, beadSize, palette])
 

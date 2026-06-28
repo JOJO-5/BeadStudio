@@ -1,3 +1,2 @@
-// Simple RGB-based color matching (fast, effective for limited palettes)
-// For better color accuracy, can upgrade to LAB + ΔE later
-export { quantizeToPalette, findNearestColor, type QuantizationResult } from './rgbMatcher'
+// Color matching using simple RGB Euclidean distance
+export { quantizeToPalette, quantizeWithDithering, findNearestColor, type QuantizationResult } from './rgbMatcher'

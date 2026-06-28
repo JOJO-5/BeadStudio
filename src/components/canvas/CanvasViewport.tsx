@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import type { WheelEvent, MouseEvent } from 'react'
 import { useProjectStore } from '@/store/projectStore'
 import { pixelateImage } from '@/engine/pixelate'
-import { quantizeToPalette } from '@/engine/colorMatch'
+import { quantizeWithDithering } from '@/engine/colorMatch'
 import { presetPalettes } from '@/engine/palette'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
@@ -33,7 +33,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
 
     const pixelSize = Math.max(1, beadSize)
     const pixelated = pixelateImage(originalImage, { pixelSize })
-    const quantized = quantizeToPalette(pixelated, palette)
+    const quantized = quantizeWithDithering(pixelated, palette)
 
     return quantized.imageData
   }, [originalImage, beadSize, palette])
