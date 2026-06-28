@@ -31,6 +31,13 @@ export const perlerClassic: Palette = {
     { code: '00017', name: 'Purple', nameZh: '紫色', rgb: [128, 0, 128], hex: '#800080' },
     { code: '00018', name: 'Pink', nameZh: '粉色', rgb: [255, 192, 203], hex: '#FFC0CB' },
     { code: '00019', name: 'Brown', nameZh: '棕色', rgb: [139, 69, 19], hex: '#8B4513' },
+    // Skin tones - 人像皮肤色系
+    { code: '00030', name: 'Light Skin', nameZh: '浅肤色', rgb: [255, 223, 186], hex: '#FFDFBA' },
+    { code: '00031', name: 'Light Beige', nameZh: '浅米色', rgb: [255, 228, 196], hex: '#FFE4C4' },
+    { code: '00032', name: 'Medium Skin', nameZh: '中肤色', rgb: [241, 194, 125], hex: '#F1C27D' },
+    { code: '00033', name: 'Warm Beige', nameZh: '暖米色', rgb: [255, 210, 170], hex: '#FFD2AA' },
+    { code: '00034', name: 'Peach', nameZh: '桃色', rgb: [255, 218, 185], hex: '#FFDAB9' },
+    { code: '00035', name: 'Tan', nameZh: '棕褐色', rgb: [210, 180, 140], hex: '#D2B48C' },
     { code: '00020', name: 'Gray', nameZh: '灰色', rgb: [128, 128, 128], hex: '#808080' },
   ],
 }
