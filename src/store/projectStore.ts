@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 interface ProjectState {
   name: string
@@ -30,14 +31,28 @@ const initialState: ProjectState = {
   targetHeight: 0,
 }
 
-export const useProjectStore = create<ProjectState & ProjectActions>((set) => ({
-  ...initialState,
+export const useProjectStore = create<ProjectState & ProjectActions>()(
+  persist(
+    (set) => ({
+      ...initialState,
 
-  setName: (name) => set({ name }),
-  setOriginalImage: (originalImage) => set({ originalImage }),
-  setProcessedImage: (processedImage) => set({ processedImage }),
-  setPaletteId: (paletteId) => set({ paletteId }),
-  setBeadSize: (beadSize) => set({ beadSize }),
-  setTargetSize: (targetWidth, targetHeight) => set({ targetWidth, targetHeight }),
-  reset: () => set(initialState),
-}))
+      setName: (name) => set({ name }),
+      setOriginalImage: (originalImage) => set({ originalImage }),
+      setProcessedImage: (processedImage) => set({ processedImage }),
+      setPaletteId: (paletteId) => set({ paletteId }),
+      setBeadSize: (beadSize) => set({ beadSize }),
+      setTargetSize: (targetWidth, targetHeight) => set({ targetWidth, targetHeight }),
+      reset: () => set(initialState),
+    }),
+    {
+      name: 'beadstudio-project',
+      partialize: (state) => ({
+        name: state.name,
+        paletteId: state.paletteId,
+        beadSize: state.beadSize,
+        targetWidth: state.targetWidth,
+        targetHeight: state.targetHeight,
+      }),
+    }
+  )
+)
