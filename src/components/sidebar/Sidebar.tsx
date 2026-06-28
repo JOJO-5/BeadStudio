@@ -5,13 +5,13 @@ import { useProjectStore } from '@/store/projectStore'
 import { resizeImage } from '@/engine/resize'
 import { presetPalettes, type Palette } from '@/engine/palette'
 
-// 常用拼板尺寸预设（默认选中小方板29×29，约841颗珠子）
+// 常用拼板尺寸预设（宽度=横向珠子数，高度由图片比例决定）
 const PRESET_SIZES = [
-  { label: '25×25', width: 25, height: 25, desc: '微方板(625颗)', count: 625 },
-  { label: '29×29', width: 29, height: 29, desc: '小方板(841颗)', count: 841 },
-  { label: '50×50', width: 50, height: 50, desc: '中方板(2500颗)', count: 2500 },
-  { label: '50×100', width: 50, height: 100, desc: '长板(5000颗)', count: 5000 },
-  { label: '100×100', width: 100, height: 100, desc: '大方板(1万颗)', count: 10000 },
+  { label: '25颗', width: 25, desc: '小图案' },
+  { label: '50颗', width: 50, desc: '中方板' },
+  { label: '75颗', width: 75, desc: '较大图案' },
+  { label: '100颗', width: 100, desc: '大图案' },
+  { label: '150颗', width: 150, desc: '超大图案' },
 ]
 
 export function Sidebar() {
@@ -32,16 +32,16 @@ export function Sidebar() {
   const [isResizing, setIsResizing] = useState(false)
 
   const handleImageLoad = useCallback(async (imageData: ImageData) => {
-    // 上传时自动缩放到当前预设尺寸（保持宽高比）
-    const maxDim = Math.max(targetWidth, targetHeight) || 50
-    const scale = Math.min(1, maxDim / Math.max(imageData.width, imageData.height))
-    const newWidth = Math.round(imageData.width * scale)
+    // 宽度固定为用户设置的横向珠子数，高度按图片原比例计算
+    const targetW = targetWidth || 50
+    const scale = targetW / imageData.width
+    const newWidth = targetW
     const newHeight = Math.round(imageData.height * scale)
 
     const resized = await resizeImage(imageData, { width: newWidth, height: newHeight })
     setOriginalImage(resized)
     setTargetSize(newWidth, newHeight)
-  }, [setOriginalImage, setTargetSize, targetWidth, targetHeight])
+  }, [setOriginalImage, setTargetSize, targetWidth])
 
   const handleResize = useCallback(async () => {
     const { originalImage } = useProjectStore.getState()
@@ -63,10 +63,6 @@ export function Sidebar() {
 
   const handleWidthChange = (value: number) => {
     setTargetSize(value, targetHeight)
-  }
-
-  const handleHeightChange = (value: number) => {
-    setTargetSize(targetWidth, value)
   }
 
   const handlePaletteSelect = (id: string) => {
@@ -100,7 +96,6 @@ export function Sidebar() {
           targetWidth={targetWidth}
           targetHeight={targetHeight}
           onWidthChange={handleWidthChange}
-          onHeightChange={handleHeightChange}
           onResize={handleResize}
           isResizing={isResizing}
         />
@@ -181,7 +176,6 @@ interface ImageSettingsProps {
   targetWidth: number
   targetHeight: number
   onWidthChange: (value: number) => void
-  onHeightChange: (value: number) => void
   onResize: () => void
   isResizing: boolean
 }
@@ -190,7 +184,6 @@ function ImageSettings({
   targetWidth,
   targetHeight,
   onWidthChange,
-  onHeightChange,
   onResize,
   isResizing,
 }: ImageSettingsProps) {
@@ -199,35 +192,32 @@ function ImageSettings({
 
   return (
     <div className="space-y-3">
-      {/* 预设尺寸选择 */}
+      {/* 预设宽度选择 */}
       <div>
-        <label className="text-xs text-[var(--color-text-muted)] mb-1 block">拼板尺寸（横向珠子数）</label>
-        <div className="grid grid-cols-2 gap-1">
+        <label className="text-xs text-[var(--color-text-muted)] mb-1 block">拼板宽度（横向珠子数）</label>
+        <div className="grid grid-cols-3 gap-1">
           {PRESET_SIZES.map((preset) => (
             <button
               key={preset.label}
               type="button"
-              onClick={() => {
-                onWidthChange(preset.width)
-                onHeightChange(preset.height)
-              }}
+              onClick={() => onWidthChange(preset.width)}
               className={`
                 px-2 py-1.5 text-xs rounded-[var(--radius-sm)] transition-colors text-left
-                ${targetWidth === preset.width && targetHeight === preset.height
+                ${targetWidth === preset.width
                   ? 'bg-[var(--color-primary)] text-white'
                   : 'bg-[var(--color-background-muted)] hover:bg-[var(--color-border)]'
                 }
               `}
             >
-              <div className="font-medium">{preset.label} <span className="text-[10px] opacity-75">颗</span></div>
-              <div className={`text-[10px] ${targetWidth === preset.width && targetHeight === preset.height ? 'text-white/70' : 'text-[var(--color-text-muted)]'}`}>{preset.desc}</div>
+              <div className="font-medium">{preset.label}</div>
+              <div className={`text-[10px] ${targetWidth === preset.width ? 'text-white/70' : 'text-[var(--color-text-muted)]'}`}>{preset.desc}</div>
             </button>
           ))}
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <label className="text-sm text-[var(--color-text-secondary)] w-16">横向</label>
+        <label className="text-sm text-[var(--color-text-secondary)] w-16">宽度</label>
         <input
           type="number"
           min={5}
@@ -238,35 +228,29 @@ function ImageSettings({
         />
         <span className="text-xs text-[var(--color-text-muted)]">颗</span>
       </div>
-      <div className="flex items-center gap-2">
-        <label className="text-sm text-[var(--color-text-secondary)] w-16">纵向</label>
-        <input
-          type="number"
-          min={5}
-          max={200}
-          value={targetHeight || ''}
-          onChange={(e) => onHeightChange(Number(e.target.value))}
-          className="flex-1 px-2 py-1 text-sm bg-[var(--color-background)] border border-[var(--color-border)] rounded-[var(--radius-sm)]"
-        />
-        <span className="text-xs text-[var(--color-text-muted)]">颗</span>
-      </div>
 
-      {/* 统计信息 */}
-      <div className="bg-[var(--color-background-muted)] rounded-[var(--radius-sm)] p-2 space-y-1">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-[var(--color-text-muted)]">珠子总数</span>
-          <span className="font-medium text-[var(--color-text-primary)]">{beadCount.toLocaleString()} 颗</span>
+      {/* 统计信息（高度由图片比例决定，上传后显示） */}
+      {targetHeight > 0 && (
+        <div className="bg-[var(--color-background-muted)] rounded-[var(--radius-sm)] p-2 space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-[var(--color-text-muted)]">尺寸</span>
+            <span className="font-medium text-[var(--color-text-primary)]">{targetWidth}×{targetHeight} 颗</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-[var(--color-text-muted)]">珠子总数</span>
+            <span className="font-medium text-[var(--color-text-primary)]">{beadCount.toLocaleString()} 颗</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-[var(--color-text-muted)]">成品尺寸（约）</span>
+            <span className="text-[var(--color-text-secondary)]">{Math.round(targetWidth * beadSize / 10)}×{Math.round(targetHeight * beadSize / 10)} cm</span>
+          </div>
         </div>
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-[var(--color-text-muted)]">成品尺寸（约）</span>
-          <span className="text-[var(--color-text-secondary)]">{Math.round(targetWidth * beadSize / 10)}×{Math.round(targetHeight * beadSize / 10)} cm</span>
-        </div>
-      </div>
+      )}
 
       <button
         type="button"
         onClick={onResize}
-        disabled={isResizing || targetWidth <= 0 || targetHeight <= 0}
+        disabled={isResizing || targetWidth <= 0}
         className="w-full px-3 py-2 text-sm bg-[var(--color-primary)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isResizing ? '调整中...' : '应用尺寸'}
