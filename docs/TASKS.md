@@ -26,7 +26,7 @@
 - [x] **Task-017**: 实现右侧统计 Panel（颜色数量 / 材料用量 / 网格尺寸）
 - [x] **Task-018**: 实现 Canvas 画布组件（基础渲染层 + 缩放平移支持）
 - [ ] **Task-019**: 实现全局快捷键支持（Ctrl+Z / Ctrl+Shift+Z / Ctrl+S / Delete）
-- [ ] **Task-020**: 配置 Zustand Store（ProjectStore / CanvasStore / SettingsStore / HistoryStore）
+- [x] **Task-020**: 配置 Zustand Store（ProjectStore / CanvasStore / SettingsStore / HistoryStore）
 - [ ] **Task-021**: 实现 Undo/Redo 历史记录功能（基于 HistoryStore）
 - [ ] **Task-022**: 实现本地项目持久化（localStorage 保存/加载）
 
