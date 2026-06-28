@@ -19,19 +19,19 @@ export function AppShell({ toolbar, sidebar, canvas, inspector, statusBar, editT
     <div className="flex flex-col h-screen w-screen overflow-hidden">
       {/* Toolbar - fixed top */}
       <header className="flex-shrink-0 border-b border-[var(--color-border)] bg-[var(--color-background)]">
-        <div className="h-12 flex items-center gap-2">
+        <div className="h-12 flex items-center gap-1 px-1">
           {/* Mobile menu buttons */}
           <button
             onClick={() => setShowSidebar(!showSidebar)}
-            className="lg:hidden p-2 hover:bg-[var(--color-background-muted)] rounded-md"
+            className="md:hidden p-2 hover:bg-[var(--color-background-muted)] rounded-md"
             aria-label="Toggle sidebar"
           >
             {showSidebar ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <div className="flex-1">{toolbar}</div>
+          <div className="flex-1 min-w-0">{toolbar}</div>
           <button
             onClick={() => setShowInspector(!showInspector)}
-            className="lg:hidden p-2 hover:bg-[var(--color-background-muted)] rounded-md"
+            className="md:hidden p-2 hover:bg-[var(--color-background-muted)] rounded-md"
             aria-label="Toggle inspector"
           >
             {showInspector ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -45,7 +45,7 @@ export function AppShell({ toolbar, sidebar, canvas, inspector, statusBar, editT
         {/* Sidebar - desktop left, mobile overlay */}
         <aside className={`
           ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0 lg:w-64 w-64 flex-shrink-0 border-r border-[var(--color-border)] bg-[var(--color-background-subtle)] overflow-y-auto absolute lg:relative h-full z-30 transition-transform duration-200
+          md:translate-x-0 md:w-56 w-56 flex-shrink-0 border-r border-[var(--color-border)] bg-[var(--color-background-subtle)] overflow-y-auto absolute lg:relative h-full z-30 transition-transform duration-200
         `}>
           {sidebar}
         </aside>
@@ -53,7 +53,7 @@ export function AppShell({ toolbar, sidebar, canvas, inspector, statusBar, editT
         {/* Mobile sidebar backdrop */}
         {showSidebar && (
           <div
-            className="lg:hidden fixed inset-0 bg-black/50 z-20"
+            className="md:hidden fixed inset-0 bg-black/50 z-20"
             onClick={() => setShowSidebar(false)}
           />
         )}
@@ -66,7 +66,7 @@ export function AppShell({ toolbar, sidebar, canvas, inspector, statusBar, editT
         {/* Inspector - desktop right, mobile overlay */}
         <aside className={`
           ${showInspector ? 'translate-x-0' : 'translate-x-full'}
-          lg:translate-x-0 lg:w-72 w-72 flex-shrink-0 border-l border-[var(--color-border)] bg-[var(--color-background)] overflow-y-auto absolute lg:relative right-0 h-full z-30 transition-transform duration-200
+          md:translate-x-0 md:w-64 w-56 flex-shrink-0 border-l border-[var(--color-border)] bg-[var(--color-background)] overflow-y-auto absolute md:relative right-0 h-full z-30 transition-transform duration-200
         `}>
           {inspector}
         </aside>
@@ -74,7 +74,7 @@ export function AppShell({ toolbar, sidebar, canvas, inspector, statusBar, editT
         {/* Mobile inspector backdrop */}
         {showInspector && (
           <div
-            className="lg:hidden fixed inset-0 bg-black/50 z-20"
+            className="md:hidden fixed inset-0 bg-black/50 z-20"
             onClick={() => setShowInspector(false)}
           />
         )}
