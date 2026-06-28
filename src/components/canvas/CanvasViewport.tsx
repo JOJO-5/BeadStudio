@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import type { WheelEvent, MouseEvent } from 'react'
 import { useProjectStore } from '@/store/projectStore'
+import { useCanvasStore } from '@/store/canvasStore'
 import { pixelateImage } from '@/engine/pixelate'
 import { quantizeWithDithering } from '@/engine/colorMatch'
 import { removeWhiteBackground } from '@/engine/convert'
@@ -26,6 +27,9 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   const removeBackground = useProjectStore((s) => s.removeBackground)
   const quickTouchup = useProjectStore((s) => s.quickTouchup)
   const bgTolerance = useProjectStore((s) => s.bgTolerance)
+
+  const beadType = useCanvasStore((s) => s.beadType)
+  const showGrid = useCanvasStore((s) => s.showGrid)
 
   // Palette lookup (memoized)
   const palette = useMemo(() =>
@@ -106,15 +110,17 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
       ctx.translate(centerX, centerY)
       ctx.scale(debouncedZoom, debouncedZoom)
 
-      // Render beads with 3D effect
+      // Render beads with specified bead type
       renderBeads(ctx, quantizedData, palette.colors, {
         beadSize: pixelSize,
+        beadType: beadType,
         gap: 0.15,
-        highlightSize: 0.35,
+        highlightIntensity: 0.4,
+        holeSize: 0.4,
       }, 0, 0)
 
       // Draw grid lines
-      if (debouncedZoom >= 0.6) {
+      if (showGrid && debouncedZoom >= 0.6) {
         renderBeadGridLines(ctx, quantizedData, pixelSize, 0, 0, debouncedZoom)
       }
 
@@ -141,7 +147,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
       ctx.textAlign = 'center'
       ctx.fillText('上传图片开始设计', centerX, centerY)
     }
-  }, [debouncedZoom, debouncedPan, quantizedData, beadSize, zoom, pan, palette])
+  }, [debouncedZoom, debouncedPan, quantizedData, beadSize, zoom, pan, palette, beadType, showGrid])
 
   // Handle zoom
   const handleWheel = useCallback((e: WheelEvent) => {
