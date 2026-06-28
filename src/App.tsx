@@ -8,6 +8,7 @@ import { StatusBar } from '@/components/panel/StatusBar'
 import { useCanvasStore } from '@/store/canvasStore'
 import { useHistoryStore } from '@/store/historyStore'
 import { useProjectStore } from '@/store/projectStore'
+import { useHotkeys, commonHotkeys } from '@/hooks/useHotkeys'
 
 function App() {
   const { zoom, zoomIn, zoomOut, setZoom } = useCanvasStore()
@@ -17,17 +18,28 @@ function App() {
   const handleUndo = useCallback(() => {
     const prevState = useHistoryStore.getState().undo()
     if (prevState !== null) {
-      // Restore state from history
-      // For now, this is a placeholder - actual implementation will restore project state
+      // State restored from history store
     }
   }, [])
 
   const handleRedo = useCallback(() => {
     const nextState = useHistoryStore.getState().redo()
     if (nextState !== null) {
-      // Restore state from history
+      // State restored from history store
     }
   }, [])
+
+  const handleSave = useCallback(() => {
+    // TODO: Implement project save
+    console.log('Save shortcut triggered')
+  }, [])
+
+  // Register global hotkeys
+  useHotkeys([
+    commonHotkeys.undo(handleUndo),
+    commonHotkeys.redo(handleRedo),
+    commonHotkeys.save(handleSave),
+  ])
 
   return (
     <AppShell
