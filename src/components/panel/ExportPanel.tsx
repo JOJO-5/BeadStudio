@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Download, Image, FileText } from 'lucide-react'
+import { X, Download, Image, FileText, FileCode } from 'lucide-react'
 import { useProjectStore } from '@/store/projectStore'
 import { presetPalettes } from '@/engine/palette'
 import { pixelateImage } from '@/engine/pixelate'
@@ -7,8 +7,7 @@ import { quantizeWithDithering } from '@/engine/colorMatch'
 import { removeWhiteBackground } from '@/engine/convert'
 import { quickTouchup as applyTouchup } from '@/engine/grid'
 import { countColors } from '@/engine/statistics'
-import { exportToPNG } from '@/engine/export'
-import { exportToPDF } from '@/engine/export'
+import { exportToPNG, exportToPDF, exportToSVG } from '@/engine/export'
 
 interface ExportPanelProps {
   onClose: () => void
@@ -24,7 +23,7 @@ export function ExportPanel({ onClose }: ExportPanelProps) {
 
   const [showGrid, setShowGrid] = useState(true)
   const [showNumbers, setShowNumbers] = useState(false)
-  const [exportFormat, setExportFormat] = useState<'png' | 'pdf'>('png')
+  const [exportFormat, setExportFormat] = useState<'png' | 'pdf' | 'svg'>('png')
   const [isExporting, setIsExporting] = useState(false)
 
   const palette = presetPalettes.find((p) => p.id === paletteId) || presetPalettes[0]
@@ -65,6 +64,13 @@ export function ExportPanel({ onClose }: ExportPanelProps) {
           includeLegend: true,
           includeMaterialList: true,
         })
+      } else if (exportFormat === 'svg') {
+        const boards = [{ id: 'board-0', index: 0, x: 0, y: 0, width: processedImage.width, height: processedImage.height }]
+        exportToSVG(processedImage, boards, palette.colors, {
+          beadSize: 10,
+          showGrid,
+          showNumbers,
+        })
       }
     } finally {
       setIsExporting(false)
@@ -90,20 +96,27 @@ export function ExportPanel({ onClose }: ExportPanelProps) {
           {/* Format Selection */}
           <div>
             <label className="text-sm font-medium mb-2 block">导出格式</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <FormatButton
                 icon={<Image className="w-5 h-5" />}
-                label="PNG 图片"
+                label="PNG"
                 description="高清位图"
                 selected={exportFormat === 'png'}
                 onClick={() => setExportFormat('png')}
               />
               <FormatButton
                 icon={<FileText className="w-5 h-5" />}
-                label="PDF 图纸"
+                label="PDF"
                 description="含材料清单"
                 selected={exportFormat === 'pdf'}
                 onClick={() => setExportFormat('pdf')}
+              />
+              <FormatButton
+                icon={<FileCode className="w-5 h-5" />}
+                label="SVG"
+                description="矢量图"
+                selected={exportFormat === 'svg'}
+                onClick={() => setExportFormat('svg')}
               />
             </div>
           </div>
