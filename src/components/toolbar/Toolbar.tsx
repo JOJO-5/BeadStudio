@@ -1,4 +1,5 @@
-import { Undo2, Redo2, ZoomIn, ZoomOut, Download } from 'lucide-react'
+import { Undo2, Redo2, ZoomIn, ZoomOut, Download, Sun, Moon } from 'lucide-react'
+import { useSettingsStore } from '@/store/settingsStore'
 
 interface ToolbarProps {
   zoom: number
@@ -21,6 +22,12 @@ export function Toolbar({
   canUndo,
   canRedo,
 }: ToolbarProps) {
+  const { theme, setTheme } = useSettingsStore()
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
+
   return (
     <div className="flex items-center h-full px-4 gap-2">
       {/* Logo */}
@@ -69,6 +76,13 @@ export function Toolbar({
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Theme toggle */}
+      <ToolbarButton
+        icon={theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        onClick={toggleTheme}
+        title={theme === 'dark' ? '切换浅色模式' : '切换深色模式'}
+      />
 
       {/* Export */}
       <ToolbarButton
