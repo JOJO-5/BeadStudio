@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Toolbar } from '@/components/toolbar/Toolbar'
 import { EditToolbar } from '@/components/toolbar/EditToolbar'
@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/sidebar/Sidebar'
 import { CanvasViewport } from '@/components/canvas/CanvasViewport'
 import { Inspector } from '@/components/panel/Inspector'
 import { StatusBar } from '@/components/panel/StatusBar'
+import { ExportPanel } from '@/components/panel/ExportPanel'
 import { useCanvasStore } from '@/store/canvasStore'
 import { useHistoryStore } from '@/store/historyStore'
 import { useProjectStore } from '@/store/projectStore'
@@ -15,6 +16,7 @@ function App() {
   const { zoom, zoomIn, zoomOut, setZoom } = useCanvasStore()
   const { canUndo, canRedo } = useHistoryStore()
   const projectName = useProjectStore((s) => s.name)
+  const [showExport, setShowExport] = useState(false)
 
   const handleUndo = useCallback(() => {
     const prevState = useHistoryStore.getState().undo()
@@ -43,33 +45,36 @@ function App() {
   ])
 
   return (
-    <AppShell
-      toolbar={
-        <Toolbar
-          zoom={zoom}
-          onZoomIn={zoomIn}
-          onZoomOut={zoomOut}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onExport={() => {}}
-          canUndo={canUndo()}
-          canRedo={canRedo()}
-        />
-      }
-      editToolbar={<EditToolbar />}
-      sidebar={<Sidebar />}
-      canvas={<CanvasViewport zoom={zoom} onZoomChange={setZoom} />}
-      inspector={
-        <Inspector projectName={projectName} />
-      }
-      statusBar={
-        <StatusBar
-          zoom={zoom}
-          mousePosition={{ x: 0, y: 0 }}
-          dimensions={{ width: 0, height: 0 }}
-        />
-      }
-    />
+    <>
+      <AppShell
+        toolbar={
+          <Toolbar
+            zoom={zoom}
+            onZoomIn={zoomIn}
+            onZoomOut={zoomOut}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onExport={() => setShowExport(true)}
+            canUndo={canUndo()}
+            canRedo={canRedo()}
+          />
+        }
+        editToolbar={<EditToolbar />}
+        sidebar={<Sidebar />}
+        canvas={<CanvasViewport zoom={zoom} onZoomChange={setZoom} />}
+        inspector={
+          <Inspector projectName={projectName} />
+        }
+        statusBar={
+          <StatusBar
+            zoom={zoom}
+            mousePosition={{ x: 0, y: 0 }}
+            dimensions={{ width: 0, height: 0 }}
+          />
+        }
+      />
+      {showExport && <ExportPanel onClose={() => setShowExport(false)} />}
+    </>
   )
 }
 
