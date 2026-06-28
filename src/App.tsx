@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Toolbar } from '@/components/toolbar/Toolbar'
 import { Sidebar } from '@/components/sidebar/Sidebar'
@@ -5,9 +6,28 @@ import { CanvasViewport } from '@/components/canvas/CanvasViewport'
 import { Inspector } from '@/components/panel/Inspector'
 import { StatusBar } from '@/components/panel/StatusBar'
 import { useCanvasStore } from '@/store/canvasStore'
+import { useHistoryStore } from '@/store/historyStore'
+import { useProjectStore } from '@/store/projectStore'
 
 function App() {
-  const { zoom, zoomIn, zoomOut } = useCanvasStore()
+  const { zoom, zoomIn, zoomOut, setZoom } = useCanvasStore()
+  const { canUndo, canRedo } = useHistoryStore()
+  const projectName = useProjectStore((s) => s.name)
+
+  const handleUndo = useCallback(() => {
+    const prevState = useHistoryStore.getState().undo()
+    if (prevState !== null) {
+      // Restore state from history
+      // For now, this is a placeholder - actual implementation will restore project state
+    }
+  }, [])
+
+  const handleRedo = useCallback(() => {
+    const nextState = useHistoryStore.getState().redo()
+    if (nextState !== null) {
+      // Restore state from history
+    }
+  }, [])
 
   return (
     <AppShell
@@ -16,21 +36,21 @@ function App() {
           zoom={zoom}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
-          onUndo={() => {}}
-          onRedo={() => {}}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
           onExport={() => {}}
-          canUndo={false}
-          canRedo={false}
+          canUndo={canUndo()}
+          canRedo={canRedo()}
         />
       }
       sidebar={<Sidebar onUploadClick={() => {}} />}
-      canvas={<CanvasViewport zoom={zoom} onZoomChange={() => {}} />}
+      canvas={<CanvasViewport zoom={zoom} onZoomChange={setZoom} />}
       inspector={
         <Inspector
           beadCount={0}
           colorCount={0}
           boardCount={0}
-          projectName="未命名项目"
+          projectName={projectName}
           dimensions={{ width: 0, height: 0 }}
         />
       }
