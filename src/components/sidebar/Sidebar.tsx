@@ -5,13 +5,30 @@ import { useProjectStore } from '@/store/projectStore'
 import { resizeImage } from '@/engine/resize'
 import { presetPalettes, type Palette } from '@/engine/palette'
 
+// 最大尺寸限制，超过则自动缩放
+const MAX_IMAGE_SIZE = 200
+
 export function Sidebar() {
   const { setOriginalImage, setTargetSize, setPaletteId, targetWidth, targetHeight, paletteId } = useProjectStore()
   const [isResizing, setIsResizing] = useState(false)
 
   const handleImageLoad = useCallback(async (imageData: ImageData) => {
-    setOriginalImage(imageData)
-    setTargetSize(imageData.width, imageData.height)
+    // 如果图片太大，自动缩放
+    if (imageData.width > MAX_IMAGE_SIZE || imageData.height > MAX_IMAGE_SIZE) {
+      const scale = Math.min(
+        MAX_IMAGE_SIZE / imageData.width,
+        MAX_IMAGE_SIZE / imageData.height
+      )
+      const newWidth = Math.round(imageData.width * scale)
+      const newHeight = Math.round(imageData.height * scale)
+
+      const resized = await resizeImage(imageData, { width: newWidth, height: newHeight })
+      setOriginalImage(resized)
+      setTargetSize(newWidth, newHeight)
+    } else {
+      setOriginalImage(imageData)
+      setTargetSize(imageData.width, imageData.height)
+    }
   }, [setOriginalImage, setTargetSize])
 
   const handleResize = useCallback(async () => {
