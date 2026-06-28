@@ -45,7 +45,7 @@ export function AppShell({ toolbar, sidebar, canvas, inspector, statusBar, editT
         {/* Sidebar - desktop left, mobile overlay */}
         <aside className={`
           ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0 md:w-56 w-56 flex-shrink-0 border-r border-[var(--color-border)] bg-[var(--color-background-subtle)] overflow-y-auto absolute lg:relative h-full z-30 transition-transform duration-200
+          md:translate-x-0 md:w-56 w-48 flex-shrink-0 border-r border-[var(--color-border)] bg-[var(--color-background-subtle)] overflow-y-auto absolute lg:relative h-full z-30 transition-transform duration-200
         `}>
           {sidebar}
         </aside>
@@ -66,7 +66,7 @@ export function AppShell({ toolbar, sidebar, canvas, inspector, statusBar, editT
         {/* Inspector - desktop right, mobile overlay */}
         <aside className={`
           ${showInspector ? 'translate-x-0' : 'translate-x-full'}
-          md:translate-x-0 md:w-64 w-56 flex-shrink-0 border-l border-[var(--color-border)] bg-[var(--color-background)] overflow-y-auto absolute md:relative right-0 h-full z-30 transition-transform duration-200
+          md:translate-x-0 md:w-64 w-48 flex-shrink-0 border-l border-[var(--color-border)] bg-[var(--color-background)] overflow-y-auto absolute md:relative right-0 h-full z-30 transition-transform duration-200
         `}>
           {inspector}
         </aside>
