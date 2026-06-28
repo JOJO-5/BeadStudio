@@ -9,6 +9,7 @@ import { quickTouchup as applyTouchup } from '@/engine/grid'
 import { presetPalettes } from '@/engine/palette'
 import { renderBeads, renderBeadGridLines } from '@/engine/render'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { syncResizeImage } from '@/engine/resize'
 
 interface CanvasViewportProps {
   zoom: number
@@ -27,6 +28,8 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   const removeBackground = useProjectStore((s) => s.removeBackground)
   const quickTouchup = useProjectStore((s) => s.quickTouchup)
   const bgTolerance = useProjectStore((s) => s.bgTolerance)
+  const targetWidth = useProjectStore((s) => s.targetWidth)
+  const targetHeight = useProjectStore((s) => s.targetHeight)
 
   const beadType = useCanvasStore((s) => s.beadType)
   const showGrid = useCanvasStore((s) => s.showGrid)
@@ -42,6 +45,11 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
     if (!originalImage || originalImage.width === 0) return null
 
     let processed = originalImage
+
+    // Resize to target dimensions first
+    if (targetWidth > 0 && targetHeight > 0 && (originalImage.width !== targetWidth || originalImage.height !== targetHeight)) {
+      processed = syncResizeImage(processed, { width: targetWidth, height: targetHeight })
+    }
 
     // Apply background removal if enabled
     if (removeBackground) {
@@ -59,7 +67,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
     const quantized = quantizeWithDithering(pixelated, palette)
 
     return quantized.imageData
-  }, [originalImage, beadSize, palette, removeBackground, quickTouchup, bgTolerance])
+  }, [originalImage, beadSize, palette, removeBackground, quickTouchup, bgTolerance, targetWidth, targetHeight])
 
   // Debounce zoom/pan for rendering (smooth interaction without re-computing)
   const debouncedZoom = useDebouncedValue(zoom, 50)

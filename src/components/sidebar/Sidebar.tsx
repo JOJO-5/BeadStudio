@@ -40,8 +40,9 @@ export function Sidebar() {
     const newWidth = targetW
     const newHeight = Math.round(imageData.height * scale)
 
-    const resized = await resizeImage(imageData, { width: newWidth, height: newHeight })
-    setOriginalImage(resized)
+    // 保存原图
+    setOriginalImage(imageData)
+    // 设置目标尺寸
     setTargetSize(newWidth, newHeight)
     setImageLoaded(true)
   }, [setOriginalImage, setTargetSize, targetWidth])
