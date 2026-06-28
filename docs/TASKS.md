@@ -2,7 +2,7 @@
 
 ## Phase 1 — 仓库初始化
 
-- [ ] **Task-001**: 初始化 React + Vite + TypeScript 项目，配置 pnpm workspace
+- [x] **Task-001**: 初始化 React + Vite + TypeScript 项目，配置 pnpm workspace
 - [ ] **Task-002**: 配置 Tailwind CSS + PostCSS + autoprefixer
 - [ ] **Task-003**: 配置 shadcn/ui，添加 Button / Slider / Tabs / Dialog 基础组件
 - [ ] **Task-004**: 配置 ESLint + Prettier + commitlint，建立 Git Hooks (husky + lint-staged)
@@ -20,11 +20,11 @@
 
 ## Phase 2 — 编辑器界面
 
-- [ ] **Task-014**: 搭建整体布局框架（Sidebar + Canvas + Panel 三栏布局）
-- [ ] **Task-015**: 实现顶部 Toolbar（工具按钮组 / 缩放控制 / 撤销重做按钮）
-- [ ] **Task-016**: 实现左侧 Sidebar（图片上传区 / 调色板选择区）
-- [ ] **Task-017**: 实现右侧统计 Panel（颜色数量 / 材料用量 / 网格尺寸）
-- [ ] **Task-018**: 实现 Canvas 画布组件（基础渲染层 + 缩放平移支持）
+- [x] **Task-014**: 搭建整体布局框架（Sidebar + Canvas + Panel 三栏布局）
+- [x] **Task-015**: 实现顶部 Toolbar（工具按钮组 / 缩放控制 / 撤销重做按钮）
+- [x] **Task-016**: 实现左侧 Sidebar（图片上传区 / 调色板选择区）
+- [x] **Task-017**: 实现右侧统计 Panel（颜色数量 / 材料用量 / 网格尺寸）
+- [x] **Task-018**: 实现 Canvas 画布组件（基础渲染层 + 缩放平移支持）
 - [ ] **Task-019**: 实现全局快捷键支持（Ctrl+Z / Ctrl+Shift+Z / Ctrl+S / Delete）
 - [ ] **Task-020**: 配置 Zustand Store（ProjectStore / CanvasStore / SettingsStore / HistoryStore）
 - [ ] **Task-021**: 实现 Undo/Redo 历史记录功能（基于 HistoryStore）
