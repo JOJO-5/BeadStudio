@@ -6,7 +6,7 @@ import { resizeImage } from '@/engine/resize'
 import { presetPalettes, type Palette } from '@/engine/palette'
 
 // 最大尺寸限制，超过则自动缩放
-const MAX_IMAGE_SIZE = 200
+const MAX_IMAGE_SIZE = 400
 
 export function Sidebar() {
   const { setOriginalImage, setTargetSize, setPaletteId, targetWidth, targetHeight, paletteId } = useProjectStore()
