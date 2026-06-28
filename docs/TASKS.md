@@ -45,7 +45,7 @@
 ## Phase 4 — 颜色引擎
 
 - [x] **Task-028**: 实现 PaletteEngine（调色板配置 / 预设调色板 / 自定义调色板）
-- [ ] **Task-029**: 实现 ColorMatcher（颜色量化 / LAB 转换 / ΔE2000 计算，集成 image-q）
+- [x] **Task-029**: 实现 ColorMatcher（颜色量化 / LAB 转换 / ΔE2000 计算，集成 image-q）
 - [ ] **Task-030**: 实现抖动算法（Floyd-Steinberg / Atkinson / Sierra，可切换）
 - [ ] **Task-031**: 实现调色板映射预览（显示原图 → 映射后效果对比）
 - [ ] **Task-032**: 实现颜色替换功能（单个颜色或整体调色板替换）
