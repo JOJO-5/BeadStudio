@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react'
-import { Palette, Settings } from 'lucide-react'
+import { Settings, PaletteIcon } from 'lucide-react'
 import { ImageUploader } from '@/features/image-upload'
 import { useProjectStore } from '@/store/projectStore'
 import { resizeImage } from '@/engine/resize'
+import { presetPalettes, type Palette } from '@/engine/palette'
 
 export function Sidebar() {
-  const { setOriginalImage, setTargetSize, targetWidth, targetHeight } = useProjectStore()
+  const { setOriginalImage, setTargetSize, setPaletteId, targetWidth, targetHeight, paletteId } = useProjectStore()
   const [isResizing, setIsResizing] = useState(false)
 
   const handleImageLoad = useCallback(async (imageData: ImageData) => {
@@ -39,6 +40,10 @@ export function Sidebar() {
     setTargetSize(targetWidth, value)
   }
 
+  const handlePaletteSelect = (id: string) => {
+    setPaletteId(id)
+  }
+
   return (
     <div className="p-4 space-y-6">
       {/* Upload Section */}
@@ -47,20 +52,16 @@ export function Sidebar() {
       </SidebarSection>
 
       {/* Palette Section */}
-      <SidebarSection title="调色板" icon={<Palette className="w-4 h-4" />}>
+      <SidebarSection title="调色板" icon={<PaletteIcon className="w-4 h-4" />}>
         <div className="space-y-2">
-          <PaletteSelector
-            label="Perler 经典"
-            colors={['#FFFFFF', '#000000', '#FF0000', '#00FF00', '#0000FF']}
-          />
-          <PaletteSelector
-            label="Hama Midi"
-            colors={['#FFFFFF', '#000000', '#FF0000', '#FFFF00', '#00FF00']}
-          />
-          <PaletteSelector
-            label="Artkal S"
-            colors={['#FFFFFF', '#000000', '#FF0000', '#FF00FF', '#00FFFF']}
-          />
+          {presetPalettes.map((palette) => (
+            <PaletteSelector
+              key={palette.id}
+              palette={palette}
+              isSelected={palette.id === paletteId}
+              onSelect={() => handlePaletteSelect(palette.id)}
+            />
+          ))}
         </div>
       </SidebarSection>
 
@@ -98,20 +99,30 @@ function SidebarSection({ title, icon, children }: SidebarSectionProps) {
 }
 
 interface PaletteSelectorProps {
-  label: string
-  colors: string[]
+  palette: Palette
+  isSelected: boolean
+  onSelect: () => void
 }
 
-function PaletteSelector({ label, colors }: PaletteSelectorProps) {
+function PaletteSelector({ palette, isSelected, onSelect }: PaletteSelectorProps) {
+  const displayColors = palette.colors.slice(0, 8)
+
   return (
-    <div className="bg-[var(--color-background)] rounded-[var(--radius-md)] p-2 cursor-pointer hover:ring-2 ring-[var(--color-primary)] transition-all">
-      <p className="text-xs text-[var(--color-text-secondary)] mb-2">{label}</p>
-      <div className="flex gap-1">
-        {colors.map((color, i) => (
+    <div
+      className={`
+        bg-[var(--color-background)] rounded-[var(--radius-md)] p-2 cursor-pointer transition-all
+        ${isSelected ? 'ring-2 ring-[var(--color-primary)]' : 'hover:ring-2 hover:ring-[var(--color-border-strong)]'}
+      `}
+      onClick={onSelect}
+    >
+      <p className="text-xs text-[var(--color-text-secondary)] mb-2">{palette.nameZh}</p>
+      <div className="flex gap-1 flex-wrap">
+        {displayColors.map((color) => (
           <div
-            key={i}
+            key={color.code}
             className="w-5 h-5 rounded-full border border-[var(--color-border)]"
-            style={{ backgroundColor: color }}
+            style={{ backgroundColor: color.hex }}
+            title={`${color.nameZh} (${color.code})`}
           />
         ))}
       </div>
