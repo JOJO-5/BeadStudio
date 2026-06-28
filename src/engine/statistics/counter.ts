@@ -1,4 +1,6 @@
 import type { Palette, PaletteColor } from '@/engine/palette'
+import { rgbToLab } from '@/engine/convert/lab'
+import type { RGB } from '@/engine/convert/rgb'
 
 export interface ColorStat {
   color: PaletteColor
@@ -21,15 +23,19 @@ export function countColors(imageData: ImageData, palette: Palette): Statistics 
     const g = data[i + 1]
     const b = data[i + 2]
 
-    // Find closest palette color
+    // Find closest palette color using LAB distance
+    const inputLab = rgbToLab([r, g, b] as RGB)
+
     let closest = palette.colors[0]
     let minDist = Infinity
 
     for (const pc of palette.colors) {
-      const dr = pc.rgb[0] - r
-      const dg = pc.rgb[1] - g
-      const db = pc.rgb[2] - b
-      const dist = dr * dr + dg * dg + db * db
+      const pcLab = rgbToLab(pc.rgb as RGB)
+      const dL = inputLab.L - pcLab.L
+      const da = inputLab.a - pcLab.a
+      const db = inputLab.b - pcLab.b
+      const dist = Math.sqrt(dL * dL + da * da + db * db)
+
       if (dist < minDist) {
         minDist = dist
         closest = pc

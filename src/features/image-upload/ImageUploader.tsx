@@ -55,15 +55,11 @@ export function ImageUploader({ onImageLoad }: ImageUploaderProps) {
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string
       setPreview(dataUrl)
-
-      const img = new Image()
-      img.onload = () => {
-        processImage(img)
-      }
-      img.src = dataUrl
+      // Show cropper immediately, don't process yet
+      setShowCropper(true)
     }
     reader.readAsDataURL(file)
-  }, [processImage])
+  }, [])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()

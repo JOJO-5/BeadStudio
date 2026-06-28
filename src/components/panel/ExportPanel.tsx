@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { X, Download, Image, FileText, FileCode } from 'lucide-react'
 import { useProjectStore } from '@/store/projectStore'
 import { presetPalettes } from '@/engine/palette'
-import { pixelateImage } from '@/engine/pixelate'
 import { quantizeWithDithering } from '@/engine/colorMatch'
 import { removeWhiteBackground } from '@/engine/convert'
+import { syncResizeImage } from '@/engine/resize'
 import { quickTouchup as applyTouchup } from '@/engine/grid'
 import { countColors } from '@/engine/statistics'
 import { exportToPNG, exportToPDF, exportToSVG } from '@/engine/export'
@@ -15,7 +15,8 @@ interface ExportPanelProps {
 
 export function ExportPanel({ onClose }: ExportPanelProps) {
   const originalImage = useProjectStore((s) => s.originalImage)
-  const beadSize = useProjectStore((s) => s.beadSize)
+  const targetWidth = useProjectStore((s) => s.targetWidth)
+  const targetHeight = useProjectStore((s) => s.targetHeight)
   const paletteId = useProjectStore((s) => s.paletteId)
   const removeBackground = useProjectStore((s) => s.removeBackground)
   const quickTouchup = useProjectStore((s) => s.quickTouchup)
@@ -30,14 +31,19 @@ export function ExportPanel({ onClose }: ExportPanelProps) {
 
   const processedImage = originalImage ? (() => {
     let processed = originalImage
+
+    // Resize to target dimensions
+    if (targetWidth > 0 && targetHeight > 0 && (originalImage.width !== targetWidth || originalImage.height !== targetHeight)) {
+      processed = syncResizeImage(processed, { width: targetWidth, height: targetHeight })
+    }
+
     if (removeBackground) {
       processed = removeWhiteBackground(processed, { tolerance: bgTolerance })
     }
-    let pixelated = pixelateImage(processed, { pixelSize: beadSize })
     if (quickTouchup) {
-      pixelated = applyTouchup(pixelated, palette.colors)
+      processed = applyTouchup(processed, palette.colors)
     }
-    return quantizeWithDithering(pixelated, palette).imageData
+    return quantizeWithDithering(processed, palette).imageData
   })() : null
 
   const statistics = originalImage && processedImage ? countColors(processedImage, palette) : null
@@ -54,7 +60,7 @@ export function ExportPanel({ onClose }: ExportPanelProps) {
           beadSize: 10,
           showGrid,
           showNumbers,
-        })
+        }, statistics?.colors)
       } else if (exportFormat === 'pdf') {
         const boards = [{ id: 'board-0', index: 0, x: 0, y: 0, width: processedImage.width, height: processedImage.height }]
         await exportToPDF(processedImage, boards, palette.colors, statistics?.colors || [], {

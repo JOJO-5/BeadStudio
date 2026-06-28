@@ -2,7 +2,6 @@ import { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import type { WheelEvent, MouseEvent } from 'react'
 import { useProjectStore } from '@/store/projectStore'
 import { useCanvasStore } from '@/store/canvasStore'
-import { pixelateImage } from '@/engine/pixelate'
 import { quantizeWithDithering } from '@/engine/colorMatch'
 import { removeWhiteBackground } from '@/engine/convert'
 import { quickTouchup as applyTouchup } from '@/engine/grid'
@@ -21,6 +20,8 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  const [hoveredBead, setHoveredBead] = useState<{ x: number; y: number; code: string; name: string } | null>(null)
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
   const originalImage = useProjectStore((s) => s.originalImage)
   const beadSize = useProjectStore((s) => s.beadSize)
@@ -41,12 +42,12 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   )
 
   // Pre-compute quantized image (only when inputs change, not on zoom/pan)
-  const quantizedData = useMemo(() => {
+  const quantizedResult = useMemo(() => {
     if (!originalImage || originalImage.width === 0) return null
 
     let processed = originalImage
 
-    // Resize to target dimensions first
+    // Resize to target bead count dimensions
     if (targetWidth > 0 && targetHeight > 0 && (originalImage.width !== targetWidth || originalImage.height !== targetHeight)) {
       processed = syncResizeImage(processed, { width: targetWidth, height: targetHeight })
     }
@@ -56,18 +57,19 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
       processed = removeWhiteBackground(processed, { tolerance: bgTolerance })
     }
 
-    const pixelSize = Math.max(1, beadSize)
-    let pixelated = pixelateImage(processed, { pixelSize })
-
-    // Apply quick touchup if enabled
+    // Skip pixelateImage - the resize already gives us 1 pixel = 1 bead
+    // Just apply touchup if enabled
+    let final = processed
     if (quickTouchup) {
-      pixelated = applyTouchup(pixelated, palette.colors)
+      final = applyTouchup(processed, palette.colors)
     }
 
-    const quantized = quantizeWithDithering(pixelated, palette)
+    const quantized = quantizeWithDithering(final, palette)
 
-    return quantized.imageData
+    return quantized
   }, [originalImage, beadSize, palette, removeBackground, quickTouchup, bgTolerance, targetWidth, targetHeight])
+
+  const quantizedData = quantizedResult?.imageData ?? null
 
   // Debounce zoom/pan for rendering (smooth interaction without re-computing)
   const debouncedZoom = useDebouncedValue(zoom, 50)
@@ -103,11 +105,12 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
 
     // Draw bead pattern if available
     if (quantizedData && quantizedData.width > 0) {
-      const pixelSize = Math.max(4, beadSize) // Minimum 4px for visibility
+      // Use beadSize directly for rendering
+      const renderSize = beadSize
 
       // Calculate position to center the image
-      const imgWidth = quantizedData.width * pixelSize
-      const imgHeight = quantizedData.height * pixelSize
+      const imgWidth = quantizedData.width * renderSize
+      const imgHeight = quantizedData.height * renderSize
       const centerX = (rect.width - imgWidth * debouncedZoom) / 2 + debouncedPan.x
       const centerY = (rect.height - imgHeight * debouncedZoom) / 2 + debouncedPan.y
 
@@ -120,16 +123,16 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
 
       // Render beads with specified bead type
       renderBeads(ctx, quantizedData, palette.colors, {
-        beadSize: pixelSize,
+        beadSize: renderSize,
         beadType: beadType,
-        gap: 0.15,
-        highlightIntensity: 0.4,
+        gap: 0.1,
+        highlightIntensity: 0.3,
         holeSize: 0.4,
       }, 0, 0)
 
       // Draw grid lines
       if (showGrid && debouncedZoom >= 0.6) {
-        renderBeadGridLines(ctx, quantizedData, pixelSize, 0, 0, debouncedZoom)
+        renderBeadGridLines(ctx, quantizedData, renderSize, 0, 0, debouncedZoom)
       }
 
       ctx.restore()
@@ -159,7 +162,8 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
 
   // Handle zoom
   const handleWheel = useCallback((e: WheelEvent) => {
-    e.preventDefault()
+    // Don't prevent default - passive listeners can't preventDefault
+    // The wheel event on a div doesn't scroll the page anyway
     const delta = e.deltaY > 0 ? -0.1 : 0.1
     const newZoom = Math.max(0.1, Math.min(5, zoom + delta))
     onZoomChange(newZoom)
@@ -174,16 +178,65 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   }, [pan])
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
+    const canvas = canvasRef.current
+    if (!canvas || !quantizedData || !quantizedResult) {
+      setHoveredBead(null)
+      return
+    }
+
+    // Track mouse position for tooltip
+    const rect = canvas.getBoundingClientRect()
+    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+
     if (isPanning) {
       setPan({
         x: e.clientX - panStart.x,
         y: e.clientY - panStart.y,
       })
+      return
     }
-  }, [isPanning, panStart])
+
+    // Calculate mouse position relative to canvas
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+
+    // Calculate image position and size
+    const renderSize = beadSize
+    const imgWidth = quantizedData.width * renderSize
+    const imgHeight = quantizedData.height * renderSize
+    const centerX = (rect.width - imgWidth * debouncedZoom) / 2 + debouncedPan.x
+    const centerY = (rect.height - imgHeight * debouncedZoom) / 2 + debouncedPan.y
+
+    // Transform mouse position to image coordinates
+    const imageX = (mouseX - centerX) / debouncedZoom
+    const imageY = (mouseY - centerY) / debouncedZoom
+
+    // Convert to bead grid coordinates
+    const beadX = Math.floor(imageX / renderSize)
+    const beadY = Math.floor(imageY / renderSize)
+
+    // Check if within image bounds
+    if (beadX >= 0 && beadX < quantizedData.width && beadY >= 0 && beadY < quantizedData.height) {
+      const pixelIndex = beadY * quantizedData.width + beadX
+      const code = quantizedResult.colorCodes[pixelIndex]
+      const colorInfo = palette.colors.find(c => c.code === code)
+      if (colorInfo) {
+        setHoveredBead({ x: beadX, y: beadY, code: colorInfo.code, name: colorInfo.nameZh })
+      } else {
+        setHoveredBead(null)
+      }
+    } else {
+      setHoveredBead(null)
+    }
+  }, [isPanning, panStart, quantizedData, quantizedResult, palette, beadSize, debouncedZoom, debouncedPan])
 
   const handleMouseUp = useCallback(() => {
     setIsPanning(false)
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    setIsPanning(false)
+    setHoveredBead(null)
   }, [])
 
   return (
@@ -193,13 +246,25 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
     >
       <canvas
         ref={canvasRef}
         className="w-full h-full"
         style={{ cursor: isPanning ? 'grabbing' : 'default', imageRendering: 'pixelated' }}
       />
+      {hoveredBead && (
+        <div
+          className="absolute pointer-events-none bg-[var(--color-background)] border border-[var(--color-border)] rounded-[var(--radius-sm)] px-2 py-1 shadow-lg text-xs z-50"
+          style={{
+            left: `${mousePos.x + 10}px`,
+            top: `${mousePos.y - 30}px`,
+          }}
+        >
+          <div className="font-medium">{hoveredBead.code}</div>
+          <div className="text-[var(--color-text-muted)]">{hoveredBead.name}</div>
+        </div>
+      )}
     </div>
   )
 }

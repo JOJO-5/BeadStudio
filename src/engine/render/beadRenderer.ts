@@ -30,8 +30,9 @@ export function renderBeads(
   const { beadSize, beadType = 'round-solid', gap = 0.15, highlightIntensity = 0.4, holeSize = 0.4 } = options
   const { width, height, data } = imageData
 
-  // Calculate bead visual size with gap
-  const beadRadius = (beadSize * (1 - gap)) / 2
+  // When beadSize is small, use no gap to avoid sub-pixel rendering issues
+  const effectiveGap = beadSize <= 3 ? 0 : gap
+  const beadRadius = (beadSize * (1 - effectiveGap)) / 2
   const beadDiameter = beadRadius * 2
 
   ctx.save()
@@ -48,9 +49,13 @@ export function renderBeads(
       // Skip transparent pixels
       if (a < 128) continue
 
-      // Center of this bead
-      const cx = offsetX + x * beadSize + beadSize / 2
-      const cy = offsetY + y * beadSize + beadSize / 2
+      // Center of this bead (round to integers for small beads to avoid sub-pixel issues)
+      const cx = beadSize <= 3
+        ? Math.round(offsetX + x * beadSize + beadSize / 2)
+        : offsetX + x * beadSize + beadSize / 2
+      const cy = beadSize <= 3
+        ? Math.round(offsetY + y * beadSize + beadSize / 2)
+        : offsetY + y * beadSize + beadSize / 2
 
       switch (beadType) {
         case 'square':
@@ -77,20 +82,15 @@ function renderSquareBead(
   r: number,
   g: number,
   b: number,
-  highlightIntensity: number
+  _highlightIntensity: number
 ): void {
   const halfSize = size / 2
   const x = cx - halfSize
   const y = cy - halfSize
 
-  // Main square
+  // Main square - solid color, crisp edges
   ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
   ctx.fillRect(x, y, size, size)
-
-  // Highlight (top-left corner)
-  ctx.fillStyle = `rgba(255, 255, 255, ${highlightIntensity * 0.5})`
-  ctx.fillRect(x, y, size, size * 0.3)
-  ctx.fillRect(x, y, size * 0.3, size)
 }
 
 function renderRoundSolidBead(
@@ -103,18 +103,26 @@ function renderRoundSolidBead(
   b: number,
   highlightIntensity: number
 ): void {
-  // Main bead circle
-  ctx.beginPath()
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2)
-  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
-  ctx.fill()
+  // Main bead circle - solid fill (use pixelated fill for small radii)
+  if (radius < 1) {
+    // For sub-pixel beads, just fill a single pixel
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+    ctx.fillRect(cx - 0.5, cy - 0.5, 1, 1)
+  } else {
+    ctx.beginPath()
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2)
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+    ctx.fill()
 
-  // Highlight dot (top-left)
-  const highlightRadius = radius * 0.35
-  ctx.beginPath()
-  ctx.arc(cx - radius * 0.3, cy - radius * 0.3, highlightRadius, 0, Math.PI * 2)
-  ctx.fillStyle = `rgba(255, 255, 255, ${highlightIntensity})`
-  ctx.fill()
+    // Simple highlight dot (top-left) - only if intensity is set and radius is big enough
+    if (highlightIntensity > 0.1 && radius >= 2) {
+      const highlightRadius = Math.max(0.5, radius * 0.25)
+      ctx.beginPath()
+      ctx.arc(cx - radius * 0.25, cy - radius * 0.25, highlightRadius, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, highlightIntensity * 0.6)})`
+      ctx.fill()
+    }
+  }
 }
 
 function renderRoundHollowBead(
@@ -130,39 +138,39 @@ function renderRoundHollowBead(
 ): void {
   const holeRadius = radius * holeSize
 
-  // Outer ring (bead body with hole)
+  // For sub-pixel or very small beads, render as simple square
+  if (radius < 1) {
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+    ctx.fillRect(cx - 0.5, cy - 0.5, 1, 1)
+    return
+  }
+
+  // Outer ring (bead body with hole) - clean solid fill
   ctx.beginPath()
   ctx.arc(cx, cy, radius, 0, Math.PI * 2)
-  ctx.arc(cx, cy, holeRadius, 0, Math.PI * 2, true) // Counter-clockwise to create hole
+  ctx.arc(cx, cy, holeRadius, 0, Math.PI * 2, true)
   ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
   ctx.fill()
 
-  // Inner edge highlight (rim lighting)
-  ctx.beginPath()
-  ctx.arc(cx, cy, radius - 1, 0, Math.PI * 2)
-  ctx.strokeStyle = `rgba(0, 0, 0, 0.3)`
-  ctx.lineWidth = 1
-  ctx.stroke()
-
-  // Hole inner edge
+  // Clean hole edge
   ctx.beginPath()
   ctx.arc(cx, cy, holeRadius, 0, Math.PI * 2)
-  ctx.strokeStyle = `rgba(0, 0, 0, 0.4)`
-  ctx.lineWidth = 1
+  ctx.strokeStyle = `rgba(0, 0, 0, 0.5)`
+  ctx.lineWidth = Math.max(0.5, radius * 0.1)
   ctx.stroke()
 
-  // Highlight on top-left of bead (not in hole)
-  const highlightRadius = radius * 0.25
-  const highlightX = cx - radius * 0.35
-  const highlightY = cy - radius * 0.35
-
-  // Only draw highlight if it's not in the hole area
-  const distFromCenter = Math.sqrt(Math.pow(highlightX - cx, 2) + Math.pow(highlightY - cy, 2))
-  if (distFromCenter + highlightRadius > holeRadius) {
-    ctx.beginPath()
-    ctx.arc(highlightX, highlightY, highlightRadius, 0, Math.PI * 2)
-    ctx.fillStyle = `rgba(255, 255, 255, ${highlightIntensity})`
-    ctx.fill()
+  // Small highlight dot - only if intensity is set and position is valid
+  if (highlightIntensity > 0.1 && radius >= 2) {
+    const highlightRadius = Math.max(0.5, radius * 0.15)
+    const highlightX = cx - radius * 0.35
+    const highlightY = cy - radius * 0.35
+    const distFromCenter = Math.sqrt(Math.pow(highlightX - cx, 2) + Math.pow(highlightY - cy, 2))
+    if (distFromCenter + highlightRadius > holeRadius) {
+      ctx.beginPath()
+      ctx.arc(highlightX, highlightY, highlightRadius, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, highlightIntensity * 0.5)})`
+      ctx.fill()
+    }
   }
 }
 

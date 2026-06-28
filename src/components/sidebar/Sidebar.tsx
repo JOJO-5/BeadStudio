@@ -66,7 +66,15 @@ export function Sidebar() {
   }, [targetWidth, targetHeight, setOriginalImage])
 
   const handleWidthChange = (value: number) => {
-    setTargetSize(value, targetHeight)
+    // Recalculate height based on original image aspect ratio
+    const { originalImage } = useProjectStore.getState()
+    if (originalImage && originalImage.width > 0) {
+      const scale = value / originalImage.width
+      const newHeight = Math.round(originalImage.height * scale)
+      setTargetSize(value, newHeight)
+    } else {
+      setTargetSize(value, targetHeight)
+    }
   }
 
   const handlePaletteSelect = (id: string) => {
