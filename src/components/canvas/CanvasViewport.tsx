@@ -109,8 +109,8 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
       // Render beads with 3D effect
       renderBeads(ctx, quantizedData, palette.colors, {
         beadSize: pixelSize,
-        gap: 0.08,
-        highlightIntensity: 0.35,
+        gap: 0.15,
+        highlightSize: 0.35,
       }, 0, 0)
 
       // Draw grid lines

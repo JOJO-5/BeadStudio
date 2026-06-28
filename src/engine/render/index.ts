@@ -1,1 +1,1 @@
-export { renderBeads, renderBeadGrid, renderBeadGridLines, type BeadRenderOptions } from './beadRenderer'
+export { renderBeads, renderBeadGridLines, type BeadRenderOptions } from './beadRenderer'
