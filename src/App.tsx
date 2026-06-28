@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Toolbar } from '@/components/toolbar/Toolbar'
+import { EditToolbar } from '@/components/toolbar/EditToolbar'
 import { Sidebar } from '@/components/sidebar/Sidebar'
 import { CanvasViewport } from '@/components/canvas/CanvasViewport'
 import { Inspector } from '@/components/panel/Inspector'
@@ -55,6 +56,7 @@ function App() {
           canRedo={canRedo()}
         />
       }
+      editToolbar={<EditToolbar />}
       sidebar={<Sidebar />}
       canvas={<CanvasViewport zoom={zoom} onZoomChange={setZoom} />}
       inspector={

@@ -2,18 +2,20 @@ import type { ReactNode } from 'react'
 
 interface AppShellProps {
   toolbar: ReactNode
+  editToolbar?: ReactNode
   sidebar: ReactNode
   canvas: ReactNode
   inspector: ReactNode
   statusBar: ReactNode
 }
 
-export function AppShell({ toolbar, sidebar, canvas, inspector, statusBar }: AppShellProps) {
+export function AppShell({ toolbar, sidebar, canvas, inspector, statusBar, editToolbar }: AppShellProps) {
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">
       {/* Toolbar - fixed top */}
-      <header className="h-12 flex-shrink-0 border-b border-[var(--color-border)] bg-[var(--color-background)]">
-        {toolbar}
+      <header className="flex-shrink-0 border-b border-[var(--color-border)] bg-[var(--color-background)]">
+        <div className="h-12">{toolbar}</div>
+        {editToolbar && <div className="border-t border-[var(--color-border)]">{editToolbar}</div>}
       </header>
 
       {/* Main content area */}

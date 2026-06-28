@@ -190,7 +190,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
       <canvas
         ref={canvasRef}
         className="w-full h-full"
-        style={{ cursor: isPanning ? 'grabbing' : 'default' }}
+        style={{ cursor: isPanning ? 'grabbing' : 'default', imageRendering: 'pixelated' }}
       />
     </div>
   )
