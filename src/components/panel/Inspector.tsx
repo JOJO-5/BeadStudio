@@ -4,6 +4,8 @@ import { useProjectStore } from '@/store/projectStore'
 import { presetPalettes } from '@/engine/palette'
 import { pixelateImage } from '@/engine/pixelate'
 import { quantizeWithDithering } from '@/engine/colorMatch'
+import { removeWhiteBackground } from '@/engine/convert'
+import { quickTouchup as applyTouchup } from '@/engine/grid'
 import { countColors } from '@/engine/statistics'
 
 interface InspectorProps {
@@ -16,6 +18,9 @@ export function Inspector({ projectName }: InspectorProps) {
   const paletteId = useProjectStore((s) => s.paletteId)
   const targetWidth = useProjectStore((s) => s.targetWidth)
   const targetHeight = useProjectStore((s) => s.targetHeight)
+  const removeBackground = useProjectStore((s) => s.removeBackground)
+  const quickTouchup = useProjectStore((s) => s.quickTouchup)
+  const bgTolerance = useProjectStore((s) => s.bgTolerance)
 
   const palette = presetPalettes.find((p) => p.id === paletteId) || presetPalettes[0]
 
@@ -24,10 +29,21 @@ export function Inspector({ projectName }: InspectorProps) {
       return null
     }
 
-    const pixelated = pixelateImage(originalImage, { pixelSize: beadSize })
+    let processed = originalImage
+
+    if (removeBackground) {
+      processed = removeWhiteBackground(processed, { tolerance: bgTolerance })
+    }
+
+    let pixelated = pixelateImage(processed, { pixelSize: beadSize })
+
+    if (quickTouchup) {
+      pixelated = applyTouchup(pixelated, palette.colors)
+    }
+
     const quantized = quantizeWithDithering(pixelated, palette)
     return countColors(quantized.imageData, palette)
-  }, [originalImage, beadSize, palette])
+  }, [originalImage, beadSize, palette, removeBackground, quickTouchup, bgTolerance])
 
   const beadCount = statistics?.totalPixels || 0
   const colorCount = statistics?.colorCount || 0

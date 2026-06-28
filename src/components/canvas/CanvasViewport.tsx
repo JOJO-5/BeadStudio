@@ -3,6 +3,8 @@ import type { WheelEvent, MouseEvent } from 'react'
 import { useProjectStore } from '@/store/projectStore'
 import { pixelateImage } from '@/engine/pixelate'
 import { quantizeWithDithering } from '@/engine/colorMatch'
+import { removeWhiteBackground } from '@/engine/convert'
+import { quickTouchup as applyTouchup } from '@/engine/grid'
 import { presetPalettes } from '@/engine/palette'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
@@ -20,6 +22,9 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   const originalImage = useProjectStore((s) => s.originalImage)
   const beadSize = useProjectStore((s) => s.beadSize)
   const paletteId = useProjectStore((s) => s.paletteId)
+  const removeBackground = useProjectStore((s) => s.removeBackground)
+  const quickTouchup = useProjectStore((s) => s.quickTouchup)
+  const bgTolerance = useProjectStore((s) => s.bgTolerance)
 
   // Palette lookup (memoized)
   const palette = useMemo(() =>
@@ -31,12 +36,25 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   const quantizedData = useMemo(() => {
     if (!originalImage || originalImage.width === 0) return null
 
+    let processed = originalImage
+
+    // Apply background removal if enabled
+    if (removeBackground) {
+      processed = removeWhiteBackground(processed, { tolerance: bgTolerance })
+    }
+
     const pixelSize = Math.max(1, beadSize)
-    const pixelated = pixelateImage(originalImage, { pixelSize })
+    let pixelated = pixelateImage(processed, { pixelSize })
+
+    // Apply quick touchup if enabled
+    if (applyTouchup) {
+      pixelated = applyTouchup(pixelated, palette.colors)
+    }
+
     const quantized = quantizeWithDithering(pixelated, palette)
 
     return quantized.imageData
-  }, [originalImage, beadSize, palette])
+  }, [originalImage, beadSize, palette, removeBackground, quickTouchup, bgTolerance])
 
   // Debounce zoom/pan for rendering (smooth interaction without re-computing)
   const debouncedZoom = useDebouncedValue(zoom, 50)

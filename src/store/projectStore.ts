@@ -9,6 +9,10 @@ interface ProjectState {
   beadSize: number
   targetWidth: number
   targetHeight: number
+  // New features
+  removeBackground: boolean
+  quickTouchup: boolean
+  bgTolerance: number
 }
 
 interface ProjectActions {
@@ -18,6 +22,9 @@ interface ProjectActions {
   setPaletteId: (paletteId: string) => void
   setBeadSize: (size: number) => void
   setTargetSize: (width: number, height: number) => void
+  setRemoveBackground: (enabled: boolean) => void
+  setQuickTouchup: (enabled: boolean) => void
+  setBgTolerance: (tolerance: number) => void
   reset: () => void
 }
 
@@ -29,6 +36,9 @@ const initialState: ProjectState = {
   beadSize: 8,
   targetWidth: 0,
   targetHeight: 0,
+  removeBackground: false,
+  quickTouchup: false,
+  bgTolerance: 45,
 }
 
 export const useProjectStore = create<ProjectState & ProjectActions>()(
@@ -42,6 +52,9 @@ export const useProjectStore = create<ProjectState & ProjectActions>()(
       setPaletteId: (paletteId) => set({ paletteId }),
       setBeadSize: (beadSize) => set({ beadSize }),
       setTargetSize: (targetWidth, targetHeight) => set({ targetWidth, targetHeight }),
+      setRemoveBackground: (removeBackground) => set({ removeBackground }),
+      setQuickTouchup: (quickTouchup) => set({ quickTouchup }),
+      setBgTolerance: (bgTolerance) => set({ bgTolerance }),
       reset: () => set(initialState),
     }),
     {
@@ -52,6 +65,9 @@ export const useProjectStore = create<ProjectState & ProjectActions>()(
         beadSize: state.beadSize,
         targetWidth: state.targetWidth,
         targetHeight: state.targetHeight,
+        removeBackground: state.removeBackground,
+        quickTouchup: state.quickTouchup,
+        bgTolerance: state.bgTolerance,
       }),
     }
   )

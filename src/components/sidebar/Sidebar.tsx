@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Settings, PaletteIcon } from 'lucide-react'
+import { Settings, PaletteIcon, Eraser, Sparkles } from 'lucide-react'
 import { ImageUploader } from '@/features/image-upload'
 import { useProjectStore } from '@/store/projectStore'
 import { resizeImage } from '@/engine/resize'
@@ -9,7 +9,20 @@ import { presetPalettes, type Palette } from '@/engine/palette'
 const MAX_IMAGE_SIZE = 400
 
 export function Sidebar() {
-  const { setOriginalImage, setTargetSize, setPaletteId, targetWidth, targetHeight, paletteId } = useProjectStore()
+  const {
+    setOriginalImage,
+    setTargetSize,
+    setPaletteId,
+    targetWidth,
+    targetHeight,
+    paletteId,
+    removeBackground,
+    setRemoveBackground,
+    quickTouchup,
+    setQuickTouchup,
+    bgTolerance,
+    setBgTolerance,
+  } = useProjectStore()
   const [isResizing, setIsResizing] = useState(false)
 
   const handleImageLoad = useCallback(async (imageData: ImageData) => {
@@ -91,6 +104,24 @@ export function Sidebar() {
           onHeightChange={handleHeightChange}
           onResize={handleResize}
           isResizing={isResizing}
+        />
+      </SidebarSection>
+
+      {/* Background Removal Section */}
+      <SidebarSection title="去白底" icon={<Eraser className="w-4 h-4" />}>
+        <BackgroundSettings
+          enabled={removeBackground}
+          onToggle={() => setRemoveBackground(!removeBackground)}
+          tolerance={bgTolerance}
+          onToleranceChange={setBgTolerance}
+        />
+      </SidebarSection>
+
+      {/* Quick Touchup Section */}
+      <SidebarSection title="修豆快" icon={<Sparkles className="w-4 h-4" />}>
+        <TouchupSettings
+          enabled={quickTouchup}
+          onToggle={() => setQuickTouchup(!quickTouchup)}
         />
       </SidebarSection>
     </div>
@@ -204,6 +235,68 @@ function ImageSettings({
       >
         {isResizing ? '调整中...' : '调整图片尺寸'}
       </button>
+    </div>
+  )
+}
+
+interface BackgroundSettingsProps {
+  enabled: boolean
+  onToggle: () => void
+  tolerance: number
+  onToleranceChange: (value: number) => void
+}
+
+function BackgroundSettings({ enabled, onToggle, tolerance, onToleranceChange }: BackgroundSettingsProps) {
+  return (
+    <div className="space-y-3">
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={onToggle}
+          className="w-4 h-4 rounded border-[var(--color-border)]"
+        />
+        <span className="text-sm text-[var(--color-text-secondary)]">移除白底</span>
+      </label>
+      {enabled && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-[var(--color-text-muted)]">容差</span>
+            <span className="text-xs text-[var(--color-text-primary)]">{tolerance}</span>
+          </div>
+          <input
+            type="range"
+            min={10}
+            max={100}
+            value={tolerance}
+            onChange={(e) => onToleranceChange(Number(e.target.value))}
+            className="w-full"
+          />
+          <p className="text-xs text-[var(--color-text-muted)]">数值越大，越多背景色会被移除</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface TouchupSettingsProps {
+  enabled: boolean
+  onToggle: () => void
+}
+
+function TouchupSettings({ enabled, onToggle }: TouchupSettingsProps) {
+  return (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={onToggle}
+          className="w-4 h-4 rounded border-[var(--color-border)]"
+        />
+        <span className="text-sm text-[var(--color-text-secondary)]">自动修豆</span>
+      </label>
+      <p className="text-xs text-[var(--color-text-muted)]">填补空洞、平滑边缘</p>
     </div>
   )
 }
