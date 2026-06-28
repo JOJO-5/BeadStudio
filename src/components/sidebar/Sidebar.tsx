@@ -8,6 +8,15 @@ import { presetPalettes, type Palette } from '@/engine/palette'
 // 最大尺寸限制，超过则自动缩放
 const MAX_IMAGE_SIZE = 400
 
+// 常用拼板尺寸预设
+const PRESET_SIZES = [
+  { label: '29×29', width: 29, height: 29, desc: '小方板' },
+  { label: '58×58', width: 58, height: 58, desc: '中方板' },
+  { label: '29×58', width: 29, height: 58, desc: '小长板' },
+  { label: '58×116', width: 58, height: 116, desc: '中方板×2' },
+  { label: '任意', width: 0, height: 0, desc: '自定义' },
+]
+
 export function Sidebar() {
   const {
     setOriginalImage,
@@ -199,6 +208,29 @@ function ImageSettings({
 
   return (
     <div className="space-y-3">
+      {/* 预设尺寸选择 */}
+      <div>
+        <label className="text-xs text-[var(--color-text-muted)] mb-1 block">预设尺寸</label>
+        <div className="grid grid-cols-3 gap-1">
+          {PRESET_SIZES.map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              onClick={() => {
+                if (preset.width > 0) {
+                  onWidthChange(preset.width)
+                  onHeightChange(preset.height)
+                }
+              }}
+              className="px-2 py-1.5 text-xs bg-[var(--color-background-muted)] hover:bg-[var(--color-border)] rounded-[var(--radius-sm)] transition-colors"
+              title={preset.desc}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex items-center gap-2">
         <label className="text-sm text-[var(--color-text-secondary)] w-16">宽度</label>
         <input
@@ -224,8 +256,12 @@ function ImageSettings({
         <span className="text-xs text-[var(--color-text-muted)]">px</span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-sm text-[var(--color-text-secondary)]">Bead 尺寸</span>
+        <span className="text-sm text-[var(--color-text-secondary)]">珠子尺寸</span>
         <span className="text-sm text-[var(--color-text-primary)]">{beadSize}px</span>
+      </div>
+      <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+        <span>成品尺寸</span>
+        <span>约 {Math.round(targetWidth * beadSize / 10)}×{Math.round(targetHeight * beadSize / 10)} cm</span>
       </div>
       <button
         type="button"
