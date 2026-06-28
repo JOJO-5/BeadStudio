@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { flipHorizontal, flipVertical } from '@/engine/convert'
 
 interface ProjectState {
   name: string
@@ -25,6 +26,8 @@ interface ProjectActions {
   setRemoveBackground: (enabled: boolean) => void
   setQuickTouchup: (enabled: boolean) => void
   setBgTolerance: (tolerance: number) => void
+  flipImageHorizontal: () => void
+  flipImageVertical: () => void
   reset: () => void
 }
 
@@ -43,7 +46,7 @@ const initialState: ProjectState = {
 
 export const useProjectStore = create<ProjectState & ProjectActions>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initialState,
 
       setName: (name) => set({ name }),
@@ -55,6 +58,16 @@ export const useProjectStore = create<ProjectState & ProjectActions>()(
       setRemoveBackground: (removeBackground) => set({ removeBackground }),
       setQuickTouchup: (quickTouchup) => set({ quickTouchup }),
       setBgTolerance: (bgTolerance) => set({ bgTolerance }),
+      flipImageHorizontal: () => {
+        const { originalImage } = get()
+        if (!originalImage) return
+        set({ originalImage: flipHorizontal(originalImage) })
+      },
+      flipImageVertical: () => {
+        const { originalImage } = get()
+        if (!originalImage) return
+        set({ originalImage: flipVertical(originalImage) })
+      },
       reset: () => set(initialState),
     }),
     {

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Settings, PaletteIcon, Eraser, Sparkles } from 'lucide-react'
+import { Settings, PaletteIcon, Eraser, Sparkles, FlipHorizontal, FlipVertical } from 'lucide-react'
 import { ImageUploader } from '@/features/image-upload'
 import { useProjectStore } from '@/store/projectStore'
 import { resizeImage } from '@/engine/resize'
@@ -29,7 +29,9 @@ export function Sidebar() {
     bgTolerance,
     setBgTolerance,
   } = useProjectStore()
+  const { flipImageHorizontal, flipImageVertical } = useProjectStore()
   const [isResizing, setIsResizing] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   const handleImageLoad = useCallback(async (imageData: ImageData) => {
     // 宽度固定为用户设置的横向珠子数，高度按图片原比例计算
@@ -41,6 +43,7 @@ export function Sidebar() {
     const resized = await resizeImage(imageData, { width: newWidth, height: newHeight })
     setOriginalImage(resized)
     setTargetSize(newWidth, newHeight)
+    setImageLoaded(true)
   }, [setOriginalImage, setTargetSize, targetWidth])
 
   const handleResize = useCallback(async () => {
@@ -117,6 +120,32 @@ export function Sidebar() {
           enabled={quickTouchup}
           onToggle={() => setQuickTouchup(!quickTouchup)}
         />
+      </SidebarSection>
+
+      {/* Flip Section */}
+      <SidebarSection title="翻转" icon={<FlipHorizontal className="w-4 h-4" />}>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={flipImageHorizontal}
+            disabled={!imageLoaded}
+            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-[var(--color-background-muted)] hover:bg-[var(--color-border)] rounded-[var(--radius-md)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            title="水平镜像"
+          >
+            <FlipHorizontal className="w-4 h-4" />
+            <span>左右</span>
+          </button>
+          <button
+            type="button"
+            onClick={flipImageVertical}
+            disabled={!imageLoaded}
+            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-[var(--color-background-muted)] hover:bg-[var(--color-border)] rounded-[var(--radius-md)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            title="垂直镜像"
+          >
+            <FlipVertical className="w-4 h-4" />
+            <span>上下</span>
+          </button>
+        </div>
       </SidebarSection>
     </div>
   )
