@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo } from 'react'
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import type { WheelEvent, MouseEvent } from 'react'
 import { useProjectStore } from '@/store/projectStore'
 import { pixelateImage } from '@/engine/pixelate'
@@ -11,9 +11,6 @@ interface CanvasViewportProps {
   onZoomChange: (zoom: number) => void
 }
 
-// 缩略图最大尺寸，超过则缩小
-const THUMBNAIL_MAX = 150
-
 export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -24,56 +21,26 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   const beadSize = useProjectStore((s) => s.beadSize)
   const paletteId = useProjectStore((s) => s.paletteId)
 
-  // Debounce expensive computations (pixelate + quantize)
-  const debouncedZoom = useDebouncedValue(zoom, 100)
-  const debouncedPan = useDebouncedValue(pan, 100)
-
-  // Memoize palette lookup
+  // Palette lookup (memoized)
   const palette = useMemo(() =>
     presetPalettes.find((p) => p.id === paletteId) || presetPalettes[0],
     [paletteId]
   )
 
-  // Pre-compute quantized image (expensive, only when inputs change)
+  // Pre-compute quantized image (only when inputs change, not on zoom/pan)
   const quantizedData = useMemo(() => {
     if (!originalImage || originalImage.width === 0) return null
 
     const pixelSize = Math.max(1, beadSize)
-
-    // 创建缩略图用于快速渲染
-    const thumbWidth = Math.min(originalImage.width, THUMBNAIL_MAX)
-    const thumbHeight = Math.round(originalImage.height * (thumbWidth / originalImage.width))
-
-    // 如果图片很大，先缩小
-    let processImage = originalImage
-    if (originalImage.width > thumbWidth) {
-      const tempCanvas = document.createElement('canvas')
-      tempCanvas.width = originalImage.width
-      tempCanvas.height = originalImage.height
-      const tempCtx = tempCanvas.getContext('2d')
-      if (tempCtx) {
-        tempCtx.putImageData(originalImage, 0, 0)
-
-        // 创建缩小的 canvas
-        const scaledCanvas = document.createElement('canvas')
-        scaledCanvas.width = thumbWidth
-        scaledCanvas.height = thumbHeight
-        const scaledCtx = scaledCanvas.getContext('2d')
-        if (scaledCtx) {
-          scaledCtx.drawImage(tempCanvas, 0, 0, thumbWidth, thumbHeight)
-          const scaledData = scaledCtx.getImageData(0, 0, thumbWidth, thumbHeight)
-          processImage = scaledData
-        }
-      }
-    }
-
-    const pixelated = pixelateImage(processImage, { pixelSize })
+    const pixelated = pixelateImage(originalImage, { pixelSize })
     const quantized = quantizeToPalette(pixelated, palette)
 
-    return {
-      imageData: quantized.imageData,
-    }
+    return quantized.imageData
   }, [originalImage, beadSize, palette])
+
+  // Debounce zoom/pan for rendering (smooth interaction without re-computing)
+  const debouncedZoom = useDebouncedValue(zoom, 50)
+  const debouncedPan = useDebouncedValue(pan, 50)
 
   // Draw canvas content
   useEffect(() => {
@@ -104,21 +71,20 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
     }
 
     // Draw image if available
-    if (quantizedData && quantizedData.imageData.width > 0) {
+    if (quantizedData && quantizedData.width > 0) {
       const pixelSize = Math.max(1, beadSize)
-      const { imageData } = quantizedData
 
       // Create temp canvas for image
       const imgCanvas = document.createElement('canvas')
-      imgCanvas.width = imageData.width
-      imgCanvas.height = imageData.height
+      imgCanvas.width = quantizedData.width
+      imgCanvas.height = quantizedData.height
       const imgCtx = imgCanvas.getContext('2d')
       if (imgCtx) {
-        imgCtx.putImageData(imageData, 0, 0)
+        imgCtx.putImageData(quantizedData, 0, 0)
 
         // Calculate position to center the image (use debounced values)
-        const imgWidth = imageData.width * pixelSize * debouncedZoom
-        const imgHeight = imageData.height * pixelSize * debouncedZoom
+        const imgWidth = quantizedData.width * pixelSize * debouncedZoom
+        const imgHeight = quantizedData.height * pixelSize * debouncedZoom
         const centerX = (rect.width - imgWidth) / 2 + debouncedPan.x
         const centerY = (rect.height - imgHeight) / 2 + debouncedPan.y
 
@@ -126,12 +92,12 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
         ctx.drawImage(imgCanvas, centerX, centerY, imgWidth, imgHeight)
 
         // Only draw grid when zoomed in enough
-        if (debouncedZoom >= 0.5) {
+        if (debouncedZoom >= 0.8) {
           ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'
           ctx.lineWidth = 1
 
           // Vertical lines
-          for (let x = 0; x <= imageData.width; x++) {
+          for (let x = 0; x <= quantizedData.width; x++) {
             ctx.beginPath()
             ctx.moveTo(centerX + x * pixelSize * debouncedZoom, centerY)
             ctx.lineTo(centerX + x * pixelSize * debouncedZoom, centerY + imgHeight)
@@ -139,7 +105,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
           }
 
           // Horizontal lines
-          for (let y = 0; y <= imageData.height; y++) {
+          for (let y = 0; y <= quantizedData.height; y++) {
             ctx.beginPath()
             ctx.moveTo(centerX, centerY + y * pixelSize * debouncedZoom)
             ctx.lineTo(centerX + imgWidth, centerY + y * pixelSize * debouncedZoom)
@@ -172,33 +138,33 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   }, [debouncedZoom, debouncedPan, quantizedData, beadSize, zoom, pan])
 
   // Handle zoom
-  const handleWheel = (e: WheelEvent) => {
+  const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault()
     const delta = e.deltaY > 0 ? -0.1 : 0.1
     const newZoom = Math.max(0.1, Math.min(5, zoom + delta))
     onZoomChange(newZoom)
-  }
+  }, [zoom, onZoomChange])
 
   // Handle pan
-  const handleMouseDown = (e: MouseEvent) => {
+  const handleMouseDown = useCallback((e: MouseEvent) => {
     if (e.button === 1 || (e.button === 0 && e.altKey)) {
       setIsPanning(true)
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
     }
-  }
+  }, [pan])
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isPanning) {
       setPan({
         x: e.clientX - panStart.x,
         y: e.clientY - panStart.y,
       })
     }
-  }
+  }, [isPanning, panStart])
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsPanning(false)
-  }
+  }, [])
 
   return (
     <div
