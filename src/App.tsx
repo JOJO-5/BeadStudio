@@ -43,7 +43,7 @@ function App() {
           canRedo={canRedo()}
         />
       }
-      sidebar={<Sidebar onUploadClick={() => {}} />}
+      sidebar={<Sidebar />}
       canvas={<CanvasViewport zoom={zoom} onZoomChange={setZoom} />}
       inspector={
         <Inspector
