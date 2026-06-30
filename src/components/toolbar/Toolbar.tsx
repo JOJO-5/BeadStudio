@@ -29,14 +29,11 @@ export function Toolbar({
   }
 
   return (
-    <div className="flex items-center h-full px-4 gap-2">
-      {/* Logo */}
-      <div className="flex items-center gap-2 mr-4">
+    <div className="flex items-center h-full px-2 md:px-4 gap-1 md:gap-2">
+      {/* Logo - hidden on mobile */}
+      <div className="hidden md:flex items-center gap-2 mr-2">
         <span className="font-semibold text-[var(--color-text-primary)]">BeadStudio</span>
       </div>
-
-      {/* Divider */}
-      <div className="w-px h-6 bg-[var(--color-border)]" />
 
       {/* Undo/Redo */}
       <div className="flex items-center gap-1">
@@ -64,7 +61,7 @@ export function Toolbar({
           onClick={onZoomOut}
           title="缩小"
         />
-        <span className="w-14 text-center text-sm text-[var(--color-text-secondary)]">
+        <span className="w-12 md:w-14 text-center text-xs md:text-sm text-[var(--color-text-secondary)]">
           {Math.round(zoom * 100)}%
         </span>
         <ToolbarButton
@@ -84,7 +81,7 @@ export function Toolbar({
         title={theme === 'dark' ? '切换浅色模式' : '切换深色模式'}
       />
 
-      {/* Export */}
+      {/* Export - always visible */}
       <ToolbarButton
         icon={<Download className="w-4 h-4" />}
         onClick={onExport}

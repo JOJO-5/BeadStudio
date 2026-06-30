@@ -2,6 +2,18 @@ import type { Palette, PaletteColor } from '@/engine/palette'
 import { rgbToLab } from '@/engine/convert/lab'
 import type { RGB } from '@/engine/convert/rgb'
 
+// Cache palette LAB values
+const paletteLabCache = new Map<string, { L: number; a: number; b: number }[]>()
+
+function getPaletteLab(palette: PaletteColor[]): { L: number; a: number; b: number }[] {
+  const key = palette.map(c => c.code).join(',')
+  if (!paletteLabCache.has(key)) {
+    const labValues = palette.map(c => rgbToLab(c.rgb as RGB))
+    paletteLabCache.set(key, labValues)
+  }
+  return paletteLabCache.get(key)!
+}
+
 export interface ColorStat {
   color: PaletteColor
   count: number
@@ -18,6 +30,9 @@ export function countColors(imageData: ImageData, palette: Palette): Statistics 
   const { data, width, height } = imageData
   const colorMap = new Map<string, { color: PaletteColor; count: number }>()
 
+  const paletteColors = palette.colors
+  const paletteLab = getPaletteLab(paletteColors)
+
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i]
     const g = data[i + 1]
@@ -26,11 +41,11 @@ export function countColors(imageData: ImageData, palette: Palette): Statistics 
     // Find closest palette color using LAB distance
     const inputLab = rgbToLab([r, g, b] as RGB)
 
-    let closest = palette.colors[0]
+    let closest = paletteColors[0]
     let minDist = Infinity
 
-    for (const pc of palette.colors) {
-      const pcLab = rgbToLab(pc.rgb as RGB)
+    for (let j = 0; j < paletteColors.length; j++) {
+      const pcLab = paletteLab[j]
       const dL = inputLab.L - pcLab.L
       const da = inputLab.a - pcLab.a
       const db = inputLab.b - pcLab.b
@@ -38,7 +53,7 @@ export function countColors(imageData: ImageData, palette: Palette): Statistics 
 
       if (dist < minDist) {
         minDist = dist
-        closest = pc
+        closest = paletteColors[j]
       }
     }
 
