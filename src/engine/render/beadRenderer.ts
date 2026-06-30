@@ -175,7 +175,7 @@ function renderRoundHollowBead(
 }
 
 /**
- * Draws grid lines between beads
+ * Draws grid lines between beads - optimized batch rendering
  */
 export function renderBeadGridLines(
   ctx: CanvasRenderingContext2D,
@@ -190,19 +190,21 @@ export function renderBeadGridLines(
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)'
   ctx.lineWidth = 1
 
-  // Vertical lines
+  // Batch all vertical lines into single path
+  ctx.beginPath()
   for (let x = 0; x <= width; x++) {
-    ctx.beginPath()
-    ctx.moveTo(offsetX + x * beadSize, offsetY)
-    ctx.lineTo(offsetX + x * beadSize, offsetY + height * beadSize)
-    ctx.stroke()
+    const xPos = offsetX + x * beadSize
+    ctx.moveTo(xPos, offsetY)
+    ctx.lineTo(xPos, offsetY + height * beadSize)
   }
+  ctx.stroke()
 
-  // Horizontal lines
+  // Batch all horizontal lines into single path
+  ctx.beginPath()
   for (let y = 0; y <= height; y++) {
-    ctx.beginPath()
-    ctx.moveTo(offsetX, offsetY + y * beadSize)
-    ctx.lineTo(offsetX + width * beadSize, offsetY + y * beadSize)
-    ctx.stroke()
+    const yPos = offsetY + y * beadSize
+    ctx.moveTo(offsetX, yPos)
+    ctx.lineTo(offsetX + width * beadSize, yPos)
   }
+  ctx.stroke()
 }

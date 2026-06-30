@@ -75,7 +75,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
   const debouncedZoom = useDebouncedValue(zoom, 50)
   const debouncedPan = useDebouncedValue(pan, 50)
 
-  // Draw canvas content
+  // Draw canvas content - optimized with reduced DPR for mobile
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -83,7 +83,7 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const dpr = window.devicePixelRatio || 1
+    const dpr = Math.min(window.devicePixelRatio || 1, 2) // Cap at 2x for mobile perf
     const rect = canvas.getBoundingClientRect()
     canvas.width = rect.width * dpr
     canvas.height = rect.height * dpr
@@ -92,16 +92,6 @@ export function CanvasViewport({ zoom, onZoomChange }: CanvasViewportProps) {
     // Clear with background
     ctx.fillStyle = '#F1F5F9'
     ctx.fillRect(0, 0, rect.width, rect.height)
-
-    // Draw subtle checkerboard background
-    const checkSize = 16
-    ctx.fillStyle = '#E2E8F0'
-    for (let y = 0; y < rect.height; y += checkSize * 2) {
-      for (let x = 0; x < rect.width; x += checkSize * 2) {
-        ctx.fillRect(x, y, checkSize, checkSize)
-        ctx.fillRect(x + checkSize, y + checkSize, checkSize, checkSize)
-      }
-    }
 
     // Draw bead pattern if available
     if (quantizedData && quantizedData.width > 0) {
